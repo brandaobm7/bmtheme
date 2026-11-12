@@ -13,6 +13,7 @@ Tema bmos para o KDE Plasma: uma área de trabalho no estilo do Mac, com identid
 - Arquivos: gerenciador de pastas no estilo do Finder.
 - Ajustes: os ajustes do dia a dia. As Configurações do Sistema do Plasma continuam instaladas para o resto.
 - Modo claro e modo escuro, papel de parede, cores, ícones, fonte e tela de abertura.
+- Nomes que dizem o que o app faz (Fotos, Mídia, Terminal, Editor de Texto) no lugar dos nomes de marca do KDE. A tabela está em [nomes.conf](nomes.conf).
 
 ## Instalar
 

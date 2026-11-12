@@ -334,6 +334,23 @@ kwriteconfig6 --file kdeglobals --group WM --key activeFont "Inter,10,-1,5,600,0
 
 "$HOME/.local/bin/bmos-tema" "$MODO"
 
+# Nomes dos apps: Fotos, Mídia, Terminal... no lugar dos nomes de marca do KDE.
+# A tabela é aplicada agora e a cada login, para valer também nos apps que
+# forem instalados ou atualizados depois.
+passo "Nomes dos apps"
+install -m 644 "$AQUI/nomes.conf" "$ESTADO/nomes.conf"
+install -m 755 "$AQUI/bin/bmos-nomes" "$HOME/.local/bin/bmos-nomes"
+mkdir -p "$CONFIG/autostart"
+cat >"$CONFIG/autostart/org.bmos.nomes.desktop" <<FIM
+[Desktop Entry]
+Type=Application
+Name=Nomes dos apps do bmos
+Exec=$HOME/.local/bin/bmos-nomes
+OnlyShowIn=KDE;
+NoDisplay=true
+FIM
+"$HOME/.local/bin/bmos-nomes" || echo "Não foi possível aplicar os nomes dos apps. Eles ficam com o nome original." >&2
+
 # A área de trabalho reinicia para enxergar os widgets novos ou atualizados.
 reiniciar_area_de_trabalho() {
   # O sistema aceita só três partidas da área de trabalho por minuto e, passando

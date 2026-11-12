@@ -69,6 +69,9 @@ def aparece(chaves):
         return False
     if chaves.get("NoDisplay", "").lower() == "true" or chaves.get("Hidden", "").lower() == "true":
         return False
+    # Apps que a tabela de nomes do bmos tira da grade (nomes.conf e bmos-nomes).
+    if chaves.get("X-Bmos-Esconder", "").lower() == "true":
+        return False
     so_em = [a for a in chaves.get("OnlyShowIn", "").split(";") if a]
     if so_em and "KDE" not in so_em:
         return False
@@ -102,7 +105,7 @@ def listar():
                     continue
                 titulo = traduzido(chaves, "Name", sufixos)
                 extras = " ".join([traduzido(chaves, "GenericName", sufixos), traduzido(chaves, "Keywords", sufixos),
-                                   chaves.get("Name", "")])
+                                   chaves.get("Name", ""), chaves.get("X-Bmos-Nome", "")])
                 apps.append({
                     "nome": titulo,
                     "icone": chaves.get("Icon", "") or "application-x-executable",

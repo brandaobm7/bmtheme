@@ -1,0 +1,150 @@
+#!/usr/bin/env python3
+"""Dá aos apps os nomes da tabela do bmos (nomes.conf).
+
+Para cada app da tabela, grava na pasta pessoal uma cópia do atalho dele com o
+nome novo. A cópia da pasta pessoal vale mais que a do sistema, então o nome
+novo aparece na grade, na busca, na dock e nos menus, sem mexer no sistema.
+Roda no login, para acompanhar apps instalados ou atualizados depois.
+
+Uso:
+  bmos-nomes              aplica a tabela
+  bmos-nomes --desfazer   apaga os atalhos que este comando criou
+"""
+
+import os
+import subprocess
+import sys
+
+CASA = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
+DESTINO = os.path.join(CASA, "applications")
+TABELA = os.environ.get("BMOS_NOMES") or os.path.join(CASA, "bmos-tema", "nomes.conf")
+MARCA = "X-Bmos-Nome"          # guarda o nome original e diz que o atalho é deste comando
+ESCONDER = "X-Bmos-Esconder"   # a grade do bmos não mostra o app
+
+
+def tabela():
+    nomes = {}
+    try:
+        with open(TABELA, encoding="utf-8") as arquivo:
+            for linha in arquivo:
+                linha = linha.strip()
+                if linha and not linha.startswith("#") and "=" in linha:
+                    app, nome = (parte.strip() for parte in linha.split("=", 1))
+                    if app and nome:
+                        nomes[app] = nome
+    except OSError:
+        pass
+    return nomes
+
+
+def pastas_do_sistema():
+    """Pastas de atalhos fora da pasta pessoal, da mais para a menos prioritária."""
+    bases = (os.environ.get("XDG_DATA_DIRS") or "/usr/local/share:/usr/share").split(":")
+    bases += [os.path.join(CASA, "flatpak/exports/share"), "/var/lib/flatpak/exports/share", "/usr/local/share", "/usr/share"]
+    vistas, lista = set(), []
+    for base in bases:
+        pasta = os.path.join(base, "applications")
+        if base and os.path.realpath(pasta) != os.path.realpath(DESTINO) and pasta not in vistas:
+            vistas.add(pasta)
+            lista.append(pasta)
+    return lista
+
+
+def original(app):
+    for pasta in pastas_do_sistema():
+        caminho = os.path.join(pasta, app)
+        if os.path.isfile(caminho):
+            return caminho
+    return None
+
+
+def ler(caminho):
+    try:
+        with open(caminho, encoding="utf-8", errors="replace") as arquivo:
+            return arquivo.read()
+    except OSError:
+        return None
+
+
+def e_nosso(texto):
+    return texto is not None and any(linha.startswith(MARCA + "=") for linha in texto.splitlines())
+
+
+def com_nome(texto, nome):
+    """O atalho original com o nome trocado no grupo principal."""
+    saida, dentro, antigo, palavras = [], False, "", None
+    for linha in texto.splitlines():
+        limpa = linha.strip()
+        if limpa.startswith("["):
+            dentro = limpa == "[Desktop Entry]"
+            saida.append(linha)
+            continue
+        if dentro:
+            chave = limpa.split("=", 1)[0].strip()
+            if chave == "Name":
+                antigo = limpa.split("=", 1)[1].strip()
+                continue
+            # Saem as traduções do nome, para o novo valer em qualquer idioma.
+            if chave.startswith("Name[") or chave in (MARCA, ESCONDER):
+                continue
+            if chave == "Keywords":
+                palavras = len(saida)
+        saida.append(linha)
+    inicio = saida.index("[Desktop Entry]") + 1 if "[Desktop Entry]" in saida else 0
+    novas = [f"{MARCA}={antigo}"]
+    if nome == "-":
+        novas += [f"Name={antigo}", f"{ESCONDER}=true"]
+    else:
+        novas.append(f"Name={nome}")
+        # O nome original continua achando o app na busca.
+        if palavras is None:
+            novas.append(f"Keywords={antigo};")
+        elif antigo and antigo.lower() not in saida[palavras].lower():
+            saida[palavras] = saida[palavras].rstrip().rstrip(";") + f";{antigo};"
+    saida[inicio:inicio] = novas
+    return "\n".join(saida) + "\n"
+
+
+def aplicar():
+    mudou = False
+    os.makedirs(DESTINO, exist_ok=True)
+    for app, nome in tabela().items():
+        alvo = os.path.join(DESTINO, app)
+        atual = ler(alvo)
+        # Um atalho que a própria pessoa pôs na pasta pessoal fica como está.
+        if atual is not None and not e_nosso(atual):
+            continue
+        fonte = original(app)
+        texto = ler(fonte) if fonte else None
+        if texto is None:
+            if atual is not None:      # o app saiu do computador
+                os.remove(alvo)
+                mudou = True
+            continue
+        novo = com_nome(texto, nome)
+        if novo != atual:
+            with open(alvo, "w", encoding="utf-8") as arquivo:
+                arquivo.write(novo)
+            mudou = True
+    return mudou
+
+
+def desfazer():
+    mudou = False
+    if os.path.isdir(DESTINO):
+        for nome in os.listdir(DESTINO):
+            caminho = os.path.join(DESTINO, nome)
+            if nome.endswith(".desktop") and os.path.isfile(caminho) and e_nosso(ler(caminho)):
+                os.remove(caminho)
+                mudou = True
+    return mudou
+
+
+if __name__ == "__main__":
+    mudou = desfazer() if "--desfazer" in sys.argv[1:] else aplicar()
+    if mudou:
+        # O Plasma lê de novo a lista de apps.
+        try:
+            subprocess.run(["kbuildsycoca6"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30)
+        except (OSError, subprocess.SubprocessError):
+            pass

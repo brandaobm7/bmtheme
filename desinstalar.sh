@@ -92,6 +92,10 @@ rm -rf "$DADOS/wallpapers/bmos" "$DADOS/wallpapers/bmos-bloqueio" "$DADOS/fonts/
 rm -rf "$DADOS"/icons/MacTahoe "$DADOS"/icons/MacTahoe-light "$DADOS"/icons/MacTahoe-dark
 quieto fc-cache -f "$DADOS/fonts"
 
+# Os apps voltam a ter o nome original.
+[ -x "$HOME/.local/bin/bmos-nomes" ] && quieto "$HOME/.local/bin/bmos-nomes" --desfazer
+rm -f "$HOME/.local/bin/bmos-nomes" "$CONFIG/autostart/org.bmos.nomes.desktop"
+
 # Aqui ficam também os apps Arquivos e Ajustes e o ambiente Python com o PySide6.
 rm -rf "$ESTADO"
 # Na imagem bmos o tema é instalado sozinho no login de cada usuário. Este aviso
