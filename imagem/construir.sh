@@ -14,7 +14,11 @@ linhas() { grep -v -E '^\s*(#|$)' "$1" || true; }
 # durante a construção. O que os instaladores guardam em cache vai para uma pasta temporária.
 export HOME="$(mktemp -d)"
 
-passo "Componentes de terceiros no sistema: fonte, ícones, decoração, tema GTK e PySide6"
+passo "Kvantum: o motor que desenha os menus e controles dos apps do KDE"
+# Não vem no Bazzite. Com ele, os menus do sistema ganham o desenho do menu do Arquivos.
+dnf5 -y install kvantum
+
+passo "Componentes de terceiros no sistema: fonte, ícones, decoração, menus, tema GTK e PySide6"
 bash "$TEMA/instalar.sh" --componentes-do-sistema
 
 # ------------------------------------------------------------------ limpeza
@@ -144,5 +148,5 @@ install -m 755 "$AQUI/limpar-restos" /usr/bin/bmos-limpar-restos
 
 passo "Faxina da construção"
 dnf5 clean all >/dev/null 2>&1 || true
-rm -rf /tmp/* /var/tmp/* /var/cache/dnf /var/cache/libdnf5 /var/lib/dnf /var/log/dnf5.log* /run/dnf /run/selinux-policy
+rm -rf /tmp/* /var/tmp/* /var/cache/dnf /var/cache/libdnf5 /var/lib/dnf /var/log/dnf5.log* /var/cache/ldconfig /run/dnf /run/selinux-policy
 printf '\nImagem bmos pronta, com o tema na versão %s.\n' "$(cat "$TEMA/VERSAO")"

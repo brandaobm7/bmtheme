@@ -99,7 +99,7 @@ O instalador baixa estes componentes dos autores, em versão fixa e conferida. E
 |------------|-------|---------|
 | Fonte Inter | Rasmus Andersson | SIL OFL 1.1 |
 | Ícones MacTahoe | vinceliuice | GPL-3.0 |
-| Decoração de janela MacTahoe para KDE | vinceliuice | LGPL-3.0 |
+| Decoração de janela e tema Kvantum MacTahoe para KDE (base dos menus e controles) | vinceliuice | LGPL-3.0 |
 | Tema GTK MacTahoe | vinceliuice | MIT |
 | PySide6 (Qt for Python) | The Qt Company | LGPL-3.0 |
 

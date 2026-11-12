@@ -11,7 +11,7 @@ ORIGINAL="$ESTADO/original"
 ARQUIVOS_CONFIG="kdeglobals kwinrc plasmarc plasmashellrc plasma-org.kde.plasma.desktop-appletsrc
 ksplashrc kscreenlockerrc kcminputrc gtkrc gtkrc-2.0 gtk-3.0/settings.ini gtk-4.0/settings.ini
 gtk-4.0/gtk.css gtk-4.0/gtk-dark.css gtk-4.0/assets gtk-4.0/windows-assets xsettingsd/xsettingsd.conf
-mimeapps.list"
+mimeapps.list Kvantum/kvantum.kvconfig"
 
 passo() { printf '\n==> %s\n' "$*"; }
 quieto() { "$@" >/dev/null 2>&1 || true; }
@@ -86,6 +86,7 @@ rm -rf "$DADOS/wallpapers/bmos" "$DADOS/wallpapers/bmos-bloqueio" "$DADOS/fonts/
   "$DADOS"/plasma/plasmoids/org.bmos.* \
   "$DADOS/aurorae/themes/MacTahoe-Light" "$DADOS/aurorae/themes/MacTahoe-Dark" \
   "$DADOS/themes/MacTahoe-Light" "$DADOS/themes/MacTahoe-Dark" \
+  "$CONFIG/Kvantum/bmos-claro" "$CONFIG/Kvantum/bmos-escuro" \
   "$HOME/.local/bin/bmos-tema" "$HOME/.local/bin/bmos-arquivos" "$HOME/.local/bin/bmos-ajustes" \
   "$HOME/.local/bin/bmos-apps" "$DADOS/applications/org.bmos.grade.desktop" \
   "$DADOS/applications/org.bmos.arquivos.desktop" "$DADOS/applications/org.bmos.ajustes.desktop"

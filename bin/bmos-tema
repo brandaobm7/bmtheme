@@ -63,5 +63,16 @@ if [ -d "$origem" ]; then
   done
 fi
 
+# Menus, botões e campos dos apps do KDE, pelo Kvantum, onde ele está instalado
+# e o tema do bmos para ele existe (na pasta pessoal ou, na imagem, no sistema).
+if { [ -e /usr/lib64/qt6/plugins/styles/libkvantum.so ] || [ -e /usr/lib/qt6/plugins/styles/libkvantum.so ]; } \
+   && { [ -d "$CONFIG/Kvantum/$plasma" ] || [ -d "/usr/share/Kvantum/$plasma" ]; }; then
+  mkdir -p "$CONFIG/Kvantum"
+  printf '[General]\ntheme=%s\n' "$plasma" >"$CONFIG/Kvantum/kvantum.kvconfig"
+  kwriteconfig6 --file kdeglobals --group KDE --key widgetStyle kvantum
+  # Avisa os apps abertos de que o estilo mudou.
+  quieto busctl --user emit /KGlobalSettings org.kde.KGlobalSettings notifyChange ii 2 0
+fi
+
 mkdir -p "$CONFIG/bmos"
 echo "$1" >"$CONFIG/bmos/tema"

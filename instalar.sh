@@ -53,7 +53,7 @@ qdbus() { "$QDBUS" "$@"; }
 ARQUIVOS_CONFIG="kdeglobals kwinrc plasmarc plasmashellrc plasma-org.kde.plasma.desktop-appletsrc
 ksplashrc kscreenlockerrc kcminputrc gtkrc gtkrc-2.0 gtk-3.0/settings.ini gtk-4.0/settings.ini
 gtk-4.0/gtk.css gtk-4.0/gtk-dark.css gtk-4.0/assets gtk-4.0/windows-assets xsettingsd/xsettingsd.conf
-mimeapps.list"
+mimeapps.list Kvantum/kvantum.kvconfig"
 
 passo() { printf '\n==> %s\n' "$*"; }
 erro() { printf 'Erro: %s\n' "$*" >&2 && exit 1; }
@@ -201,6 +201,24 @@ if ! do_sistema aurorae/themes/MacTahoe-Light && [ "$(versao_instalada decoracao
     sed -i "s/theme_name/MacTahoe-$variante/g" "$destino/metadata.desktop" "$destino/metadata.json"
   done
   marcar_versao decoracao "$MACTAHOE_KDE"
+fi
+
+# ------------------------------------------------------------------ menus e controles
+# O Kvantum desenha os menus, botões, campos e listas dos apps do KDE. O tema do
+# bmos para ele é montado a partir do MacTahoe, trocando as cores e as medidas
+# (kvantum/montar.py). Só entra onde o Kvantum está instalado: na imagem bmos ele
+# vem junto; num Bazzite comum não vem, e os menus ficam com o desenho do Plasma.
+KVANTUM_VERSAO="$MACTAHOE_KDE-$(sha256sum "$AQUI/kvantum/montar.py" | cut -c1-12)"
+PASTA_KVANTUM="$CONFIG/Kvantum"
+[ -z "$SO_COMPONENTES" ] || PASTA_KVANTUM="$SISTEMA/Kvantum"
+tem_kvantum() {
+  [ -n "$SO_COMPONENTES" ] || [ -e /usr/lib64/qt6/plugins/styles/libkvantum.so ] || [ -e /usr/lib/qt6/plugins/styles/libkvantum.so ]
+}
+if tem_kvantum && ! do_sistema Kvantum/bmos-claro && [ "$(versao_instalada kvantum)" != "$KVANTUM_VERSAO" ]; then
+  passo "Menus e controles dos apps do KDE"
+  [ -d "$TEMP/kde" ] || baixar_repositorio kde https://github.com/vinceliuice/MacTahoe-kde.git "$MACTAHOE_KDE"
+  python3 "$AQUI/kvantum/montar.py" "$TEMP/kde/Kvantum/MacTahoe" "$PASTA_KVANTUM"
+  marcar_versao kvantum "$KVANTUM_VERSAO"
 fi
 
 # ------------------------------------------------------------------ apps GTK
