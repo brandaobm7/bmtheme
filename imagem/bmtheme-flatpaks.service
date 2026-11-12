@@ -1,10 +1,12 @@
 [Unit]
-Description=Apps em Flatpak da imagem bmos
+Description=Apps em Flatpak e restos da imagem bmos
 Wants=network-online.target
 After=network-online.target bazzite-flatpak-manager.service
 
 [Service]
-Type=oneshot
+# "simple", e não "oneshot": o serviço pode esperar bastante pela rede, e assim
+# não segura o fim da inicialização do sistema.
+Type=simple
 ExecStart=/usr/libexec/bmtheme-flatpaks
 
 [Install]

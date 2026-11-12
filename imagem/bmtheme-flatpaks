@@ -9,7 +9,8 @@ mkdir -p "$(dirname "$FEITOS")"
 touch "$FEITOS"
 
 linhas() { grep -v -E '^\s*(#|$)' "$1" 2>/dev/null || true; }
-feito() { grep -q -x -F "$1" "$FEITOS"; }
+# O "-e" é preciso: as marcas começam com "+" ou "-", e o grep leria o "-" como opção.
+feito() { grep -q -x -F -e "$1" "$FEITOS"; }
 instalado() { flatpak info --system "$1" >/dev/null 2>&1; }
 
 pendentes=()
@@ -19,8 +20,13 @@ done < <(linhas "$LISTAS/flatpaks-entrar.txt")
 
 if [ "${#pendentes[@]}" -gt 0 ]; then
   flatpak remote-add --if-not-exists --system flathub /etc/flatpak/remotes.d/flathub.flatpakrepo || true
-  # Logo depois de ligar a rede pode ainda não ter subido: tenta por alguns minutos.
-  # Se não der, fica para o próximo boot.
+  # Logo depois de ligar, a rede pode demorar a funcionar de verdade, mesmo já
+  # conectada: espera até meia hora pela loja de apps responder ao nome.
+  for _ in $(seq 1 180); do
+    getent hosts dl.flathub.org >/dev/null 2>&1 && break
+    sleep 10
+  done
+  # Se mesmo assim não der, fica para o próximo boot.
   for tentativa in 1 2 3 4 5 6; do
     faltam=()
     for app in "${pendentes[@]}"; do

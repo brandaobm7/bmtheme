@@ -4,3 +4,5 @@ org.kde.okular
 com.ranfdev.DistroShelf
 com.github.tchx84.Flatseal
 io.github.flattool.Warehouse
+# O Bazzite 45 passou o teclado de outros idiomas (fcitx5) para Flatpak.
+org.fcitx.Fcitx5

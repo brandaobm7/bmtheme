@@ -60,3 +60,4 @@ flatpak:org.kde.okular
 flatpak:com.ranfdev.DistroShelf
 flatpak:com.github.tchx84.Flatseal
 flatpak:io.github.flattool.Warehouse
+flatpak:org.fcitx.Fcitx5

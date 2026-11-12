@@ -3,15 +3,15 @@
 # Cada linha entra aqui depois de conferida no relatório que restos.sh mostra na
 # construção ("Ficaram, por pertencerem a pacotes que continuam instalados").
 
-# KDE Connect: a opção "enviar para o aparelho" do menu de compartilhar, a regra
-# de firewall e o complemento de comandos.
+# KDE Connect: a opção "enviar para o aparelho" do menu de compartilhar e o
+# complemento de comandos. A definição do serviço no firewall fica: uma zona
+# gravada na máquina pode citar o nome, e sem a definição o firewall não carrega.
 /usr/lib64/qt6/plugins/kf6/purpose/kdeconnectplugin.so
 /usr/lib64/qt6/plugins/kf6/purpose/kdeconnectsmsplugin.so
 /usr/lib64/qt6/qml/org/kde/purpose/kdeconnect
 /usr/share/kf6/purpose/kdeconnectplugin_config.qml
 /usr/share/locale/*/LC_MESSAGES/purpose6_kdeconnect.mo
 /usr/share/locale/*/LC_MESSAGES/purpose6_kdeconnectsms.mo
-/usr/lib/firewalld/services/kdeconnect.xml
 /usr/share/fish/completions/kdeconnect-cli.fish
 
 # Waydroid: complemento de comandos.
