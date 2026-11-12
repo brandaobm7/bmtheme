@@ -1,0 +1,5 @@
+# Flatpaks que a imagem bmos instala no primeiro boot.
+com.google.Chrome
+org.onlyoffice.desktopeditors
+com.vysp3r.ProtonPlus
+com.github.Matoking.protontricks

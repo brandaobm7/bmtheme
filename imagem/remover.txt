@@ -1,0 +1,26 @@
+# Pacotes que saem na imagem bmos. Um por linha; vale o curinga "*".
+# A lista com o motivo de cada um está no plano do tema.
+# Não entram aqui, porque outras partes do sistema dependem deles:
+#   kmenuedit (o Plasma depende: só o atalho é escondido),
+#   maliit-keyboard (a tela de login depende: é desligado na área de trabalho),
+#   kf6-kwallet (muitos apps do KDE dependem: a carteira é desligada).
+waydroid*
+[Ss]unshine*
+input-remapper*
+kde-connect*
+kdeconnectd
+krfb*
+kwalletmanager*
+fcitx5*
+webapp-manager
+kate
+kate-plugins
+kate-krunner-plugin
+kfind
+khelpcenter
+kdebugsettings
+kjournald*
+firewall-config
+btrfs-assistant
+lutris
+rom-properties*

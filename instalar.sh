@@ -3,12 +3,23 @@
 # Não pede senha e não altera o sistema. Para desfazer: ./desinstalar.sh
 #
 # Uso: ./instalar.sh [claro|escuro]
+#
+# Na imagem bmos, os componentes de terceiros (fonte, ícones, decoração, tema GTK
+# e PySide6) já vêm no sistema. Este instalador percebe e não baixa de novo.
+# Quem os põe lá é a construção da imagem, com:
+#      ./instalar.sh --componentes-do-sistema
 
 set -euo pipefail
 
 AQUI="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=versoes.conf
 . "$AQUI/versoes.conf"
+
+SO_COMPONENTES=""
+if [ "${1:-}" = "--componentes-do-sistema" ]; then
+  SO_COMPONENTES=1
+  shift
+fi
 
 MODO="${1:-claro}"
 case "$MODO" in
@@ -23,6 +34,21 @@ ORIGINAL="$ESTADO/original"
 TEMP="$(mktemp -d)"
 trap 'rm -rf "$TEMP"' EXIT
 
+# Onde a imagem bmos guarda os componentes de terceiros.
+SISTEMA=/usr/share
+AMBIENTE_DO_SISTEMA=/usr/lib/bmtheme/venv
+if [ -n "$SO_COMPONENTES" ]; then
+  DADOS="$SISTEMA"
+  ESTADO="$TEMP/estado"
+fi
+# do_sistema CAMINHO: diz se a imagem já trouxe este componente.
+do_sistema() { [ -z "$SO_COMPONENTES" ] && [ -e "$SISTEMA/$1" ]; }
+
+# O comando do Qt que conversa com o Plasma muda de nome conforme a versão do
+# Fedora: qdbus6, qdbus-qt6 ou, nas mais antigas, qdbus.
+QDBUS="$(command -v qdbus6 || command -v qdbus-qt6 || command -v qdbus || echo /bin/false)"
+qdbus() { "$QDBUS" "$@"; }
+
 # Arquivos de configuração que o tema altera, guardados antes da primeira instalação.
 ARQUIVOS_CONFIG="kdeglobals kwinrc plasmarc plasmashellrc plasma-org.kde.plasma.desktop-appletsrc
 ksplashrc kscreenlockerrc kcminputrc gtkrc gtkrc-2.0 gtk-3.0/settings.ini gtk-4.0/settings.ini
@@ -32,13 +58,16 @@ mimeapps.list"
 passo() { printf '\n==> %s\n' "$*"; }
 erro() { printf 'Erro: %s\n' "$*" >&2 && exit 1; }
 
-[ "$(id -u)" -ne 0 ] || erro "rode como o seu usuário, sem sudo."
-command -v plasmashell >/dev/null || erro "este tema é para o KDE Plasma."
-command -v kwriteconfig6 >/dev/null || erro "este tema precisa do Plasma 6."
+if [ -z "$SO_COMPONENTES" ]; then
+  [ "$(id -u)" -ne 0 ] || erro "rode como o seu usuário, sem sudo."
+  command -v plasmashell >/dev/null || erro "este tema é para o KDE Plasma."
+  command -v kwriteconfig6 >/dev/null || erro "este tema precisa do Plasma 6."
+  [ -n "${WAYLAND_DISPLAY:-}${DISPLAY:-}" ] || erro "rode dentro da sessão do Plasma, em um terminal do próprio desktop."
+  [ "$QDBUS" != /bin/false ] || erro "falta o comando qdbus do Qt 6 (pacote qt6-qttools)."
+fi
 for comando in curl git unzip tar; do
   command -v "$comando" >/dev/null || erro "falta o comando $comando."
 done
-[ -n "${WAYLAND_DISPLAY:-}${DISPLAY:-}" ] || erro "rode dentro da sessão do Plasma, em um terminal do próprio desktop."
 
 conferir() {
   echo "$2  $1" | sha256sum -c --quiet - || erro "o arquivo baixado não confere: $(basename "$1")"
@@ -57,6 +86,8 @@ marcar_versao() { echo "$2" >"$ESTADO/$1.versao"; }
 
 # ------------------------------------------------------------------ cópia do original
 mkdir -p "$ESTADO"
+# Daqui até os componentes de terceiros é tudo do usuário: não entra na construção da imagem.
+if [ -z "$SO_COMPONENTES" ]; then
 if [ ! -d "$ORIGINAL" ]; then
   passo "Guardando a configuração atual"
   mkdir -p "$ORIGINAL/config"
@@ -112,9 +143,11 @@ for widget in "$AQUI"/widgets/org.bmos.*; do
   cp "$AQUI"/widgets/comum/*.qml "$destino/contents/ui/"
   cp -r "$AQUI/icones-tabler" "$destino/contents/icons"
 done
+fi
 
 # ------------------------------------------------------------------ fonte Inter
-if [ "$(versao_instalada inter)" != "$INTER_VERSAO" ] || [ ! -f "$DADOS/fonts/bmos/Inter-Regular.ttf" ]; then
+if ! do_sistema fonts/bmos/Inter-Regular.ttf \
+   && { [ "$(versao_instalada inter)" != "$INTER_VERSAO" ] || [ ! -f "$DADOS/fonts/bmos/Inter-Regular.ttf" ]; }; then
   passo "Fonte Inter"
   curl -fsSL -o "$TEMP/inter.zip" "https://github.com/rsms/inter/releases/download/v$INTER_VERSAO/Inter-$INTER_VERSAO.zip"
   conferir "$TEMP/inter.zip" "$INTER_SHA256"
@@ -131,7 +164,7 @@ if [ "$(versao_instalada inter)" != "$INTER_VERSAO" ] || [ ! -f "$DADOS/fonts/bm
 fi
 
 # ------------------------------------------------------------------ ícones
-if [ "$(versao_instalada icones)" != "$MACTAHOE_ICONES" ]; then
+if ! do_sistema icons/MacTahoe && [ "$(versao_instalada icones)" != "$MACTAHOE_ICONES" ]; then
   passo "Ícones MacTahoe (pode levar alguns minutos)"
   baixar_repositorio icones https://github.com/vinceliuice/MacTahoe-icon-theme.git "$MACTAHOE_ICONES"
   (cd "$TEMP/icones" && TERM="${TERM:-xterm}" ./install.sh -d "$DADOS/icons" </dev/null >/dev/null)
@@ -139,7 +172,7 @@ if [ "$(versao_instalada icones)" != "$MACTAHOE_ICONES" ]; then
 fi
 
 # ------------------------------------------------------------------ decoração das janelas
-if [ "$(versao_instalada decoracao)" != "$MACTAHOE_KDE" ]; then
+if ! do_sistema aurorae/themes/MacTahoe-Light && [ "$(versao_instalada decoracao)" != "$MACTAHOE_KDE" ]; then
   passo "Decoração das janelas"
   baixar_repositorio kde https://github.com/vinceliuice/MacTahoe-kde.git "$MACTAHOE_KDE"
   for variante in Light Dark; do
@@ -155,7 +188,19 @@ if [ "$(versao_instalada decoracao)" != "$MACTAHOE_KDE" ]; then
 fi
 
 # ------------------------------------------------------------------ apps GTK
-if [ "$(versao_instalada gtk)" != "$MACTAHOE_GTK" ]; then
+if do_sistema themes/MacTahoe-Light; then
+  # Na imagem o tema GTK já está no sistema. Os apps em Flatpak só enxergam a
+  # pasta pessoal, então ele é copiado para lá, sem baixar nada.
+  if [ "$(versao_instalada gtk)" != "$MACTAHOE_GTK" ] || [ ! -d "$DADOS/themes/MacTahoe-Light" ]; then
+    passo "Tema dos apps GTK"
+    mkdir -p "$DADOS/themes"
+    for variante in Light Dark; do
+      rm -rf "$DADOS/themes/MacTahoe-$variante"
+      cp -r "$SISTEMA/themes/MacTahoe-$variante" "$DADOS/themes/"
+    done
+    marcar_versao gtk "$MACTAHOE_GTK"
+  fi
+elif [ "$(versao_instalada gtk)" != "$MACTAHOE_GTK" ]; then
   passo "Tema dos apps GTK"
   mkdir -p "$DADOS/themes"
   for variante in Light Dark; do
@@ -170,7 +215,7 @@ if [ "$(versao_instalada gtk)" != "$MACTAHOE_GTK" ]; then
 fi
 
 # Os apps em Flatpak só enxergam o tema se tiverem acesso às pastas dele.
-if command -v flatpak >/dev/null; then
+if [ -z "$SO_COMPONENTES" ] && command -v flatpak >/dev/null; then
   flatpak override --user --filesystem=xdg-data/themes:ro --filesystem=xdg-data/icons:ro \
     --filesystem=xdg-config/gtk-3.0:ro --filesystem=xdg-config/gtk-4.0:ro >/dev/null 2>&1 || true
 fi
@@ -181,11 +226,19 @@ fi
 # no sistema. Se o download falhar, o resto do tema é instalado e o Dolphin
 # continua sendo o app de pastas.
 AMBIENTE="$ESTADO/venv"
+[ -z "$SO_COMPONENTES" ] || AMBIENTE="$AMBIENTE_DO_SISTEMA"
 REQUISITOS="$(sha256sum "$AQUI/app-comum/requisitos.txt" | cut -d' ' -f1)"
 arquivos_pronto=1
-if [ "$(versao_instalada pyside)" != "$REQUISITOS" ] || [ ! -x "$AMBIENTE/bin/python" ]; then
+if [ -z "$SO_COMPONENTES" ] && [ -x "$AMBIENTE_DO_SISTEMA/bin/python" ]; then
+  # Na imagem o PySide6 já está no sistema.
+  AMBIENTE="$AMBIENTE_DO_SISTEMA"
+  rm -rf "$ESTADO/venv" "$ESTADO/pyside.versao"
+elif [ "$(versao_instalada pyside)" != "$REQUISITOS" ] || ! "$AMBIENTE/bin/python" -c "import PySide6" 2>/dev/null; then
+  # A segunda condição pega o ambiente que parou de funcionar: quando o sistema
+  # troca a versão do Python numa atualização, o ambiente antigo não abre mais.
   passo "Arquivos e Ajustes: baixando o PySide6 (cerca de 85 MB)"
   rm -rf "$AMBIENTE" "$ESTADO/pyside.versao"
+  mkdir -p "$(dirname "$AMBIENTE")"
   if python3 -m venv "$AMBIENTE" \
      && "$AMBIENTE/bin/pip" install --quiet --disable-pip-version-check --require-hashes \
           --only-binary=:all: -r "$AQUI/app-comum/requisitos.txt"; then
@@ -196,6 +249,15 @@ if [ "$(versao_instalada pyside)" != "$REQUISITOS" ] || [ ! -x "$AMBIENTE/bin/py
     echo "Não foi possível baixar o PySide6. Os apps Arquivos e Ajustes não foram instalados: continuam o Dolphin e as Configurações do Sistema." >&2
   fi
 fi
+if [ -n "$SO_COMPONENTES" ]; then
+  # Construção da imagem: os componentes estão no sistema, e o resto é de cada usuário.
+  [ "$arquivos_pronto" = 1 ] || erro "o PySide6 não foi instalado."
+  printf '\nComponentes de terceiros instalados no sistema.\n'
+  exit 0
+fi
+# A desinstalação numa imagem bmos deixa um aviso para o tema não voltar sozinho
+# no próximo login. Instalar de novo tira o aviso.
+rm -f "$CONFIG/bmos/sem-tema"
 if [ "$arquivos_pronto" = 1 ]; then
   passo "Arquivos e Ajustes"
   rm -rf "$ESTADO/arquivos" "$ESTADO/ajustes" "$ESTADO/app-comum"
@@ -275,8 +337,28 @@ reiniciar_area_de_trabalho() {
 if [ ! -f "$ESTADO/paineis" ]; then
   passo "Montando a barra superior e a dock"
   reiniciar_area_de_trabalho
+  # A dock nasce com os apps que estavam fixados na barra de tarefas. Os que não
+  # existem neste computador ficam de fora, para não virar um ícone vazio, e
+  # também os que estão escondidos do menu de apps.
+  ausentes=""
+  fixados="$(qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "$(cat "$AQUI/paineis/fixados.js")" 2>/dev/null || true)"
+  for app in $(printf '%s' "$fixados" | tr ',' '\n' | sed -n 's/^applications://p' | sort -u); do
+    achado=""
+    for pasta in "$DADOS" $(printf '%s' "${XDG_DATA_DIRS:-}" | tr ':' ' ') /usr/local/share /usr/share \
+                 /var/lib/flatpak/exports/share "$DADOS/flatpak/exports/share"; do
+      # Um app numa subpasta tem o nome da subpasta na frente: kde-app.desktop é kde/app.desktop.
+      for arquivo in "$pasta/applications/$app" "$pasta/applications/${app/-//}"; do
+        if [ -e "$arquivo" ]; then
+          grep -q '^NoDisplay=true' "$arquivo" || achado=1
+          break 2
+        fi
+      done
+    done
+    [ -n "$achado" ] || ausentes="$ausentes\"$app\","
+  done
   # O roteiro devolve o número da barra superior.
-  if barra=$(qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "$(cat "$AQUI/paineis/montar.js")" 2>/dev/null) \
+  if barra=$(qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "var ausentes = [${ausentes%,}];
+$(cat "$AQUI/paineis/montar.js")" 2>/dev/null) \
      && [ -n "$barra" ] && [ "$barra" -gt 0 ] 2>/dev/null; then
     date +%s >"$ESTADO/paineis"
     # Popups da barra soltos dela, com os quatro cantos redondos. O roteiro dos painéis

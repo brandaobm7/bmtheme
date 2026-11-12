@@ -1,0 +1,11 @@
+[Unit]
+Description=Apps em Flatpak da imagem bmos
+Wants=network-online.target
+After=network-online.target bazzite-flatpak-manager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/bmtheme-flatpaks
+
+[Install]
+WantedBy=multi-user.target

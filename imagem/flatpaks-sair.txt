@@ -1,0 +1,6 @@
+# Flatpaks que vêm com o Bazzite e que a imagem bmos tira, no primeiro boot.
+org.mozilla.firefox
+org.kde.okular
+com.ranfdev.DistroShelf
+com.github.tchx84.Flatseal
+io.github.flattool.Warehouse

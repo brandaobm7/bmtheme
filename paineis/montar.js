@@ -20,6 +20,12 @@ for (var i = 0; i < antigos.length; i++) {
 for (var k = 0; k < antigos.length; k++) {
     antigos[k].remove();
 }
+// Ficam de fora os apps fixados que não existem neste computador. A lista vem do instalador.
+if (typeof ausentes !== "undefined" && fixados) {
+    fixados = String(fixados).split(",").filter(function (item) {
+        return ausentes.indexOf(item.replace(/^applications:/, "")) < 0;
+    }).join(",");
+}
 
 // Barra superior: transparente, com uma cápsula por widget.
 var barra = new Panel;

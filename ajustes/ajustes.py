@@ -24,6 +24,9 @@ from PySide6.QtCore import Property, QObject, QTimer, Signal, Slot
 
 from comum import rodar, soltar
 
+# O comando do Qt que conversa com o Plasma muda de nome conforme a versão do Fedora.
+QDBUS = next((c for c in ("qdbus6", "qdbus-qt6", "qdbus") if shutil.which(c)), "qdbus")
+
 CASA = os.path.expanduser("~")
 DADOS = os.environ.get("XDG_DATA_HOME") or os.path.join(CASA, ".local/share")
 ESTADO = os.path.join(DADOS, "bmos-tema")
@@ -260,7 +263,7 @@ def fundos():
 def fundo_atual():
     roteiro = ('var d = desktops()[0]; d.currentConfigGroup = ["Wallpaper", "org.kde.image", "General"]; '
                'print(d.readConfig("Image", ""))')
-    _, saida = rodar(["qdbus", "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", roteiro], 6)
+    _, saida = rodar([QDBUS, "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", roteiro], 6)
     return saida.replace("file://", "").rstrip("/")
 
 
@@ -610,4 +613,4 @@ class Ajustes(QObject):
     @Slot()
     def reiniciar(self):
         """Pede ao Plasma a tela de reinício, que confirma antes."""
-        rodar(["qdbus", "org.kde.LogoutPrompt", "/LogoutPrompt", "org.kde.LogoutPrompt.promptReboot"], 6)
+        rodar([QDBUS, "org.kde.LogoutPrompt", "/LogoutPrompt", "org.kde.LogoutPrompt.promptReboot"], 6)

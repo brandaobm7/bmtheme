@@ -1,0 +1,20 @@
+# Imagem bmos: o Bazzite com o tema bmos já dentro e sem os apps que não servem
+# a um computador de jogos com área de trabalho simples.
+#
+# BASE escolhe a imagem do Bazzite de partida, conforme a placa de vídeo:
+#   ghcr.io/ublue-os/bazzite:stable          AMD e Intel
+#   ghcr.io/ublue-os/bazzite-nvidia:stable   NVIDIA
+ARG BASE=ghcr.io/ublue-os/bazzite:stable
+FROM ${BASE}
+
+LABEL org.opencontainers.image.title="bmtheme" \
+      org.opencontainers.image.description="Bazzite com o tema bmos" \
+      org.opencontainers.image.source="https://github.com/brandaobm7/bmtheme" \
+      org.opencontainers.image.licenses="GPL-3.0-only"
+
+# O tema inteiro fica no sistema. No login de cada usuário, ele é instalado na
+# pasta pessoal a partir daqui (ver imagem/primeiro-uso.sh).
+COPY . /usr/share/bmtheme
+
+# A última etapa confere se o resultado continua sendo uma imagem de sistema válida.
+RUN bash /usr/share/bmtheme/imagem/construir.sh && bootc container lint

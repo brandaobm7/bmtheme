@@ -16,6 +16,11 @@ mimeapps.list"
 passo() { printf '\n==> %s\n' "$*"; }
 quieto() { "$@" >/dev/null 2>&1 || true; }
 
+# O comando do Qt que conversa com o Plasma muda de nome conforme a versão do
+# Fedora: qdbus6, qdbus-qt6 ou, nas mais antigas, qdbus.
+QDBUS="$(command -v qdbus6 || command -v qdbus-qt6 || command -v qdbus || echo /bin/false)"
+qdbus() { "$QDBUS" "$@"; }
+
 if [ ! -d "$ORIGINAL" ]; then
   echo "O tema bmos não está instalado para este usuário." >&2
   exit 1
@@ -88,6 +93,12 @@ quieto fc-cache -f "$DADOS/fonts"
 
 # Aqui ficam também os apps Arquivos e Ajustes e o ambiente Python com o PySide6.
 rm -rf "$ESTADO"
+# Na imagem bmos o tema é instalado sozinho no login de cada usuário. Este aviso
+# diz que este usuário tirou o tema de propósito, para ele não voltar.
+if [ -d /usr/share/bmtheme ]; then
+  mkdir -p "$CONFIG/bmos"
+  : >"$CONFIG/bmos/sem-tema"
+fi
 quieto kbuildsycoca6
 
 printf '\nTema bmos removido. Se algum app aberto continuar com o visual antigo, feche e abra de novo.\n'

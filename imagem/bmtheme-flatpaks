@@ -1,0 +1,46 @@
+#!/usr/bin/bash
+# Apps em Flatpak da imagem bmos. Roda no boot, como serviço do sistema.
+# Instala os de imagem/flatpaks-entrar.txt e tira os de imagem/flatpaks-sair.txt.
+# Cada app é tratado uma única vez: quem instalar de novo um app que saiu, ou
+# tirar um que entrou, fica com a própria escolha.
+LISTAS=/usr/share/bmtheme/imagem
+FEITOS=/etc/bmtheme/flatpaks-feitos
+mkdir -p "$(dirname "$FEITOS")"
+touch "$FEITOS"
+
+linhas() { grep -v -E '^\s*(#|$)' "$1" 2>/dev/null || true; }
+feito() { grep -q -x -F "$1" "$FEITOS"; }
+instalado() { flatpak info --system "$1" >/dev/null 2>&1; }
+
+pendentes=()
+while read -r app; do
+  feito "+$app" || pendentes+=("$app")
+done < <(linhas "$LISTAS/flatpaks-entrar.txt")
+
+if [ "${#pendentes[@]}" -gt 0 ]; then
+  flatpak remote-add --if-not-exists --system flathub /etc/flatpak/remotes.d/flathub.flatpakrepo || true
+  # Logo depois de ligar a rede pode ainda não ter subido: tenta por alguns minutos.
+  # Se não der, fica para o próximo boot.
+  for tentativa in 1 2 3 4 5 6; do
+    faltam=()
+    for app in "${pendentes[@]}"; do
+      if instalado "$app" || flatpak install --system --noninteractive flathub "$app"; then
+        echo "+$app" >>"$FEITOS"
+      else
+        faltam+=("$app")
+      fi
+    done
+    pendentes=("${faltam[@]}")
+    [ "${#pendentes[@]}" -eq 0 ] && break
+    sleep 30
+  done
+fi
+
+while read -r app; do
+  feito "-$app" && continue
+  # Os dados do app na pasta pessoal ficam: reinstalar traz tudo de volta.
+  if ! instalado "$app" || flatpak uninstall --system --noninteractive "$app"; then
+    echo "-$app" >>"$FEITOS"
+  fi
+done < <(linhas "$LISTAS/flatpaks-sair.txt")
+exit 0

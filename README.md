@@ -58,6 +58,34 @@ cd bmtheme && ./desinstalar.sh
 
 O visual, os painéis e os atalhos voltam a ser os que você tinha antes de instalar.
 
+## Imagem bmos
+
+**Em teste.** Além do tema avulso, este repositório constrói uma imagem do Bazzite com o tema já dentro, para quem quer o sistema inteiro pronto. A receita fica em [imagem/](imagem/) e o GitHub a reconstrói todo dia sobre o Bazzite mais recente.
+
+O que muda em relação ao Bazzite:
+
+- O tema bmos é aplicado sozinho no primeiro login de cada usuário, sem baixar nada.
+- Saem os apps e serviços que não servem a um computador de jogos com área de trabalho simples. A lista está em [imagem/remover.txt](imagem/remover.txt).
+- No primeiro boot, entram o Google Chrome e o OnlyOffice, e saem o Firefox e os outros de [imagem/flatpaks-sair.txt](imagem/flatpaks-sair.txt). Os dados desses apps na pasta pessoal não são apagados.
+
+Por enquanto existe só a imagem para placas NVIDIA. Trocar um Bazzite já instalado para ela:
+
+```bash
+sudo rpm-ostree rebase ostree-unverified-registry:ghcr.io/brandaobm7/bmtheme-nvidia:latest
+```
+
+Depois, reinicie. Seus arquivos, jogos e apps continuam como estão. O sistema anterior fica guardado: para voltar a ele, escolha a segunda entrada no menu de boot, ou rode:
+
+```bash
+sudo rpm-ostree rollback
+```
+
+Para voltar de vez ao Bazzite original:
+
+```bash
+sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/ublue-os/bazzite-nvidia:stable
+```
+
 ## O que fica fora do tema
 
 Um tema instalado na pasta pessoal não alcança algumas partes do sistema: a tela de boot, a tela de login, o desenho da tela de bloqueio e o formato dos menus dos outros apps.

@@ -16,6 +16,11 @@ DADOS="${XDG_DATA_HOME:-$HOME/.local/share}"
 CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}"
 quieto() { "$@" >/dev/null 2>&1 || true; }
 
+# O comando do Qt que conversa com o Plasma muda de nome conforme a versão do
+# Fedora: qdbus6, qdbus-qt6 ou, nas mais antigas, qdbus.
+QDBUS="$(command -v qdbus6 || command -v qdbus-qt6 || command -v qdbus || echo /bin/false)"
+qdbus() { "$QDBUS" "$@"; }
+
 # O tema global aplica o conjunto. Os comandos seguintes garantem cada parte,
 # porque nem toda versão do Plasma aplica tudo o que o pacote declara.
 quieto plasma-apply-lookandfeel -a "$pacote"
@@ -45,6 +50,8 @@ quieto qdbus org.kde.KWin /KWin org.kde.KWin.reconfigure
 # Apps GTK. Os GTK4 não seguem o tema do sistema: leem ~/.config/gtk-4.0.
 quieto qdbus org.kde.GtkConfig /GtkConfig org.kde.GtkConfig.setGtkTheme "MacTahoe-$variante"
 origem="$DADOS/themes/MacTahoe-$variante/gtk-4.0"
+# Na imagem bmos o tema GTK fica no sistema.
+[ -d "$origem" ] || origem="/usr/share/themes/MacTahoe-$variante/gtk-4.0"
 if [ -d "$origem" ]; then
   mkdir -p "$CONFIG/gtk-4.0"
   for item in assets windows-assets gtk.css gtk-dark.css; do
