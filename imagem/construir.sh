@@ -153,6 +153,40 @@ passo "Tela de bloqueio com o desenho do bmos"
 # alterado e a tela fica como a do Plasma.
 python3 "$AQUI/tela-de-bloqueio.py"
 
+# ------------------------------------------------------------------ tela de login
+passo "Tela de login com o papel de parede, as cores e a fonte do bmos"
+# A tela de login do Plasma (Plasma Login Manager) tem o desenho embutido no
+# programa: não dá para mudar a disposição das peças. Dá para trocar o papel de
+# parede, as cores e a fonte, e é isso que se faz aqui.
+if [ -f /usr/lib/plasmalogin/defaults.conf ]; then
+  # Papel de parede: o do bmos. O pacote tem as duas versões, e a escura é usada com cores escuras.
+  sed -i -e 's#^Image=.*#Image=file:///usr/share/bmtheme/papel-de-parede/bmos#' \
+         -e 's#^PreviewImage=.*#PreviewImage=file:///usr/share/bmtheme/papel-de-parede/bmos#' /usr/lib/plasmalogin/defaults.conf
+  grep -q '^Image=file:///usr/share/bmtheme/papel-de-parede/bmos$' /usr/lib/plasmalogin/defaults.conf \
+    || echo "Aviso: não consegui trocar o papel de parede da tela de login." >&2
+  # Cores e fonte: um arquivo de ajustes do sistema, lido só pelos dois programas da
+  # tela de login. Se a pessoa copiar os ajustes dela para a tela de login pelas
+  # Configurações do Sistema, os dela passam a valer no lugar destes.
+  mkdir -p /usr/lib/plasmalogin/bmos
+  cp "$TEMA/cores/BmosEscuro.colors" /usr/lib/plasmalogin/bmos/kdeglobals
+  ajuste() { kwriteconfig6 --file /usr/lib/plasmalogin/bmos/kdeglobals "$@"; }
+  ajuste --group General --key ColorScheme BmosEscuro
+  for chave in font menuFont toolBarFont; do
+    ajuste --group General --key "$chave" "Inter,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
+  done
+  ajuste --group General --key smallestReadableFont "Inter,8,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
+  ajuste --group Icons --key Theme MacTahoe-dark
+  chmod 644 /usr/lib/plasmalogin/bmos/kdeglobals
+  for servico in plasma-login plasma-wallpaper; do
+    mkdir -p "/usr/lib/systemd/user/$servico.service.d"
+    printf '%s\n' "# Ajustes do bmos para a tela de login (imagem/construir.sh)." "[Service]" \
+      "Environment=XDG_CONFIG_DIRS=/usr/lib/plasmalogin/bmos:/usr/share/kde-settings/kde-profile/default/xdg:/etc/xdg" \
+      >"/usr/lib/systemd/user/$servico.service.d/bmos.conf"
+  done
+else
+  echo "Aviso: esta versão do Bazzite não usa o Plasma Login Manager. A tela de login fica como vem." >&2
+fi
+
 passo "Faxina da construção"
 dnf5 clean all >/dev/null 2>&1 || true
 rm -rf /tmp/* /var/tmp/* /var/cache/dnf /var/cache/libdnf5 /var/lib/dnf /var/log/dnf5.log* /var/cache/ldconfig /run/dnf /run/selinux-policy
