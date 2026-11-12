@@ -116,6 +116,22 @@ O instalador baixa estes componentes dos autores, em versão fixa e conferida. E
 
 Os ícones de traço das telas são do [Tabler Icons](https://tabler.io/icons), licença MIT, e vêm junto com o tema.
 
+## Para quem quer mexer no tema
+
+| Pasta | O que tem |
+|-------|-----------|
+| [ferramentas/](ferramentas/) | Geradores: o estilo dos painéis do Plasma, o fundo da tela de bloqueio e ícones novos |
+| [testes/](testes/) | Testes dos apps com cliques simulados, e o teste de sessão que roda dentro da imagem |
+| [imagem/](imagem/) | A receita da imagem bmos |
+
+Os testes dos apps rodam com o tema instalado, a partir da pasta do repositório:
+
+```bash
+~/.local/share/bmos-tema/venv/bin/python -u testes/teste_cliques.py arquivos
+```
+
+Na imagem bmos, o Python fica em `/usr/lib/bmtheme/venv/bin/python`.
+
 ## Licença
 
 GPL-3.0 ou posterior. Veja [LICENSE](LICENSE).

@@ -1,0 +1,66 @@
+#!/bin/bash
+. ~/ambiente
+export QT_FORCE_STDERR_LOGGING=1
+cd ~
+echo "== fixados na dock"
+grep -n "^launchers=" ~/.config/plasma-org.kde.plasma.desktop-appletsrc | cut -c1-400
+echo "assinatura: imagem $(cat /usr/share/bmtheme/assinatura 2>/dev/null) | usuário $(cat ~/.local/share/bmos-tema/assinatura 2>/dev/null)"
+echo "== nomes dos apps"
+python3 ~/.local/share/plasma/plasmoids/org.bmos.apps/contents/code/apps.py | python3 -c "import json,sys; print(' | '.join(a['nome'] for a in json.load(sys.stdin)))"
+echo "== segundo login: não deve reinstalar"
+( time /usr/libexec/bmtheme-primeiro-uso ) 2>&1 | grep real
+echo "== apps (teste simulado)"
+xdg-user-dirs-update 2>/dev/null; ls ~ | tr "\n" " "; echo
+cd /fonte
+for t in "teste_arquivos.py arquivos" "teste_cliques.py arquivos" "teste_ajustes.py ajustes"; do
+  set -- $t
+  QT_QPA_PLATFORM=offscreen timeout 180 /usr/lib/bmtheme/venv/bin/python -u testes/$1 $2 >/saida/$1.log 2>&1
+  echo "$1: saida $? | $(awk "{print \$1}" /saida/$1.log | sort | uniq -c | grep -E " (ok|FALHOU|Traceback)" | tr "\n" " ")"
+done
+cd ~
+echo "== janelas"
+setsid ~/.local/bin/bmos-ajustes >/saida/ajustes.log 2>&1 &
+sleep 7; timeout 20 spectacle -b -n -f -o /saida/3-ajustes.png >/dev/null 2>&1; pkill -f bmos-ajustes.py
+setsid ~/.local/bin/bmos-arquivos >/saida/arquivos.log 2>&1 &
+sleep 7; timeout 20 spectacle -b -n -f -o /saida/4-arquivos.png >/dev/null 2>&1
+echo "== menus e controles (Kvantum)"
+echo "estilo: $(kreadconfig6 --file kdeglobals --group KDE --key widgetStyle) | $(grep theme ~/.config/Kvantum/kvantum.kvconfig 2>/dev/null) | temas: $(ls /usr/share/Kvantum | grep -c bmos)"
+setsid kwrite >/dev/null 2>&1 &
+sleep 6; timeout 20 spectacle -b -n -f -o /saida/4c-editor.png >/dev/null 2>&1; pkill -x kwrite
+setsid systemsettings kcm_kscreen >/dev/null 2>&1 &
+sleep 9; timeout 20 spectacle -b -n -f -o /saida/4d-configuracoes.png >/dev/null 2>&1; pkill -x systemsettings
+echo "== tela de bloqueio (modo de teste, numa janela, sem travar nada)"
+echo "desenho do bmos nos arquivos do sistema: $(grep -l "imagem/tela-de-bloqueio.py" /usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen/*.qml 2>/dev/null | wc -l) de 2"
+setsid /usr/libexec/kscreenlocker_greet --testing >/saida/bloqueio.log 2>&1 &
+sleep 7; timeout 20 spectacle -b -n -f -o /saida/4e-bloqueio.png >/dev/null 2>&1; pkill -f kscreenlocker_greet; sleep 1
+echo "erros de QML na tela de bloqueio: $(grep -cE "TypeError|ReferenceError|is not a type|Cannot assign|Unable to assign|is not defined|SyntaxError|failed to load|Error loading" /saida/bloqueio.log)"
+grep -E "TypeError|ReferenceError|is not a type|Cannot assign|Unable to assign|is not defined|SyntaxError|failed to load|Error loading" /saida/bloqueio.log | head -5 | cut -c1-200
+echo "== tela de login (modo de teste)"
+echo "papel de parede: $(grep -m1 "^Image=" /usr/lib/plasmalogin/defaults.conf) | ajustes: $(XDG_CONFIG_HOME=/tmp/vazio XDG_CONFIG_DIRS=/usr/lib/plasmalogin/bmos kreadconfig6 --file kdeglobals --group General --key ColorScheme), $(XDG_CONFIG_HOME=/tmp/vazio XDG_CONFIG_DIRS=/usr/lib/plasmalogin/bmos kreadconfig6 --file kdeglobals --group General --key font | cut -d, -f1) | serviços: $(ls /usr/lib/systemd/user/plasma-login.service.d/bmos.conf /usr/lib/systemd/user/plasma-wallpaper.service.d/bmos.conf 2>/dev/null | wc -l) de 2"
+(
+  export HOME=/tmp/casa-login XDG_CONFIG_HOME=/tmp/casa-login/.config XDG_CACHE_HOME=/tmp/casa-login/.cache
+  export XDG_CONFIG_DIRS=/usr/lib/plasmalogin/bmos:/usr/share/kde-settings/kde-profile/default/xdg:/etc/xdg
+  mkdir -p "$XDG_CONFIG_HOME"
+  setsid /usr/bin/plasma-login-wallpaper >/saida/login-papel.log 2>&1 &
+  sleep 5; timeout 20 spectacle -b -n -f -o /saida/4f-login-papel.png >/dev/null 2>&1
+  setsid /usr/libexec/plasma-login-greeter --test >/saida/login.log 2>&1 &
+  sleep 7; timeout 20 spectacle -b -n -f -o /saida/4g-login.png >/dev/null 2>&1
+  pkill -f plasma-login-greeter; pkill -f plasma-login-wallpaper; sleep 1
+)
+echo "erros na tela de login: $(cat /saida/login.log /saida/login-papel.log | grep -cE "TypeError|ReferenceError|is not a type|SyntaxError|failed to load|Error loading|not a valid package")"
+echo "== tela de boot"
+echo "tema de boot: $(plymouth-set-default-theme 2>/dev/null) | peças: $(ls /usr/share/plymouth/themes/bmos/*.png 2>/dev/null | wc -l) de 6"
+echo "== grade de apps pelo ícone da dock"
+~/.local/bin/bmos-apps; sleep 2; timeout 20 spectacle -b -n -f -o /saida/4b-grade.png >/dev/null 2>&1
+~/.local/bin/bmos-apps; sleep 1
+echo "== limpeza da imagem"
+ujust --list >/dev/null 2>&1 && echo "ujust: funciona" || echo "ujust: QUEBRADO"
+grep -hE "^(application/pdf|text/plain|text/html)=" /usr/share/applications/kde-mimeapps.list /usr/share/applications/mimeapps.list | tr "\n" " "; echo
+for app in waydroid lutris kate kdeconnect-app krfb input-remapper-gtk; do command -v $app >/dev/null && echo "AINDA EXISTE: $app"; done
+echo "citam apps removidos, fora traduções e ícones: $(find /etc /usr/bin /usr/libexec /usr/lib/systemd /usr/share/applications /usr/share/ublue-os 2>/dev/null | grep -icE "waydroid|lutris|sunshine|input-remapper|kdeconnect|krfb|kwalletmanager|khelpcenter|webapp-manager")"
+bmos-limpar-restos --ver
+echo "== modo escuro"
+( time ~/.local/bin/bmos-tema escuro ) 2>&1 | grep -E "real|rro"
+sleep 6; timeout 20 spectacle -b -n -f -o /saida/5-escuro.png >/dev/null 2>&1; pkill -f bmos-arquivos.py
+grep -c . /saida/ajustes.log /saida/arquivos.log; grep -vE "bluez|kf\.|qt\.qpa" /saida/ajustes.log /saida/arquivos.log | head -12 | cut -c1-220
+ls -la /saida/*.png

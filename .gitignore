@@ -1,2 +1,6 @@
 .DS_Store
 __pycache__/
+# Capturas e registros do teste de sessão na imagem.
+saida-da-sessao/
+# Documentos de trabalho (plano, lista de conferências, telas de referência): só no computador.
+docs/
