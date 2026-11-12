@@ -122,6 +122,13 @@ done
 printf '[Wallet]\nEnabled=false\n' >/etc/xdg/kwalletrc
 rm -f /etc/xdg/autostart/pam_kwallet_init.desktop
 
+# ------------------------------------------------------------------ ajustes de hardware
+passo "Bluetooth: o adaptador não dorme"
+# Por padrão o adaptador Bluetooth por USB dorme depois de 2 segundos sem uso.
+# Dormindo, ele não ouve o mouse ou o teclado chamar quando o computador volta
+# da suspensão, e o aparelho não reconecta sozinho.
+echo "options btusb enable_autosuspend=n" >/usr/lib/modprobe.d/bmos-btusb.conf
+
 # ------------------------------------------------------------------ tema no login
 passo "Tema aplicado no login de cada usuário"
 install -m 755 "$AQUI/primeiro-uso.sh" /usr/libexec/bmtheme-primeiro-uso
