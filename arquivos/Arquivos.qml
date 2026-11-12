@@ -758,8 +758,24 @@ Window {
         property var item
         property int indice: 0
         property bool recemMarcado: false
+        // Partes da célula que contam como o item, em retângulos. Vazio: a célula toda.
+        // Na grade são só o ícone e o nome: o clique no espaço entre dois itens cai
+        // no fundo e tira a seleção, em vez de marcar o vizinho.
+        property var zonas: []
         readonly property bool marcado: raiz.selecao.indexOf(item.caminho) >= 0
         anchors.fill: parent
+        containmentMask: QtObject {
+            function contains(ponto: point): bool {
+                if (toque.zonas.length === 0)
+                    return ponto.x >= 0 && ponto.y >= 0 && ponto.x < toque.width && ponto.y < toque.height
+                for (let i = 0; i < toque.zonas.length; i++) {
+                    const z = toque.zonas[i]
+                    if (ponto.x >= z.x && ponto.x < z.x + z.width && ponto.y >= z.y && ponto.y < z.y + z.height)
+                        return true
+                }
+                return false
+            }
+        }
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         drag.target: raiz.caminho === "lixeira:" ? null : alca
         drag.threshold: 12
@@ -1274,7 +1290,17 @@ Window {
                         maximumLineCount: 2
                         color: celula.marcado ? "#ffffff" : janela.corTexto
                     }
-                    Toque { raiz: janela; item: celula.modelData; indice: celula.index }
+                    Toque {
+                        raiz: janela
+                        item: celula.modelData
+                        indice: celula.index
+                        // O quadro do ícone e a faixa do nome, com uma folga pequena em volta do nome.
+                        readonly property real larguraDoNome: Math.min(nomeCelula.contentWidth + 12, celula.width - 4)
+                        zonas: [
+                            Qt.rect((celula.width - janela.tamanho - 20) / 2, 4, janela.tamanho + 20, janela.tamanho + 14),
+                            Qt.rect((celula.width - larguraDoNome) / 2, nomeCelula.y - 1, larguraDoNome, nomeCelula.contentHeight + 3)
+                        ]
+                    }
                     DropArea {
                         id: soltaCelula
                         anchors.fill: parent
