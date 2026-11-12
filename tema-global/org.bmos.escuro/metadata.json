@@ -1,0 +1,17 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "bmos"
+            }
+        ],
+        "Category": "",
+        "Description": "Visual escuro do bmos",
+        "Id": "org.bmos.escuro",
+        "License": "GPL-3.0-or-later",
+        "Name": "bmos Escuro",
+        "Version": "0.1"
+    },
+    "X-Plasma-APIVersion": "2"
+}

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="80" viewBox="0 0 200 80">
+<g id="topleft"><rect id="topleft-area" x="0" y="0" width="24" height="24" fill="#000000" fill-opacity="0"/><path d="M 24 24 L 0 24 A 24 24 0 0 1 24 0 Z" fill="#f4f2fb" fill-opacity="0.95"/><path d="M 0 24 A 24 24 0 0 1 24 0 L 24.0 1.0 A 23 23 0 0 0 1.0 24.0 Z" fill="#ffffff" fill-opacity="0.95"/></g>
+<g id="topright"><rect id="topright-area" x="48" y="0" width="24" height="24" fill="#000000" fill-opacity="0"/><path d="M 48 24 L 48 0 A 24 24 0 0 1 72 24 Z" fill="#f4f2fb" fill-opacity="0.95"/><path d="M 48 0 A 24 24 0 0 1 72 24 L 71.0 24.0 A 23 23 0 0 0 48.0 1.0 Z" fill="#ffffff" fill-opacity="0.95"/></g>
+<g id="bottomright"><rect id="bottomright-area" x="48" y="48" width="24" height="24" fill="#000000" fill-opacity="0"/><path d="M 48 48 L 72 48 A 24 24 0 0 1 48 72 Z" fill="#f4f2fb" fill-opacity="0.95"/><path d="M 72 48 A 24 24 0 0 1 48 72 L 48.0 71.0 A 23 23 0 0 0 71.0 48.0 Z" fill="#ffffff" fill-opacity="0.95"/></g>
+<g id="bottomleft"><rect id="bottomleft-area" x="0" y="48" width="24" height="24" fill="#000000" fill-opacity="0"/><path d="M 24 48 L 24 72 A 24 24 0 0 1 0 48 Z" fill="#f4f2fb" fill-opacity="0.95"/><path d="M 24 72 A 24 24 0 0 1 0 48 L 1.0 48.0 A 23 23 0 0 0 24.0 71.0 Z" fill="#ffffff" fill-opacity="0.95"/></g>
+<g id="top"><rect id="top-area" x="24" y="0" width="24" height="24" fill="#000000" fill-opacity="0"/><rect x="24" y="0" width="24" height="24" fill="#f4f2fb" fill-opacity="0.95"/><rect x="24" y="0" width="24" height="1" fill="#ffffff" fill-opacity="0.95"/></g>
+<g id="bottom"><rect id="bottom-area" x="24" y="48" width="24" height="24" fill="#000000" fill-opacity="0"/><rect x="24" y="48" width="24" height="24" fill="#f4f2fb" fill-opacity="0.95"/><rect x="24" y="71" width="24" height="1" fill="#ffffff" fill-opacity="0.95"/></g>
+<g id="left"><rect id="left-area" x="0" y="24" width="24" height="24" fill="#000000" fill-opacity="0"/><rect x="0" y="24" width="24" height="24" fill="#f4f2fb" fill-opacity="0.95"/><rect x="0" y="24" width="1" height="24" fill="#ffffff" fill-opacity="0.95"/></g>
+<g id="right"><rect id="right-area" x="48" y="24" width="24" height="24" fill="#000000" fill-opacity="0"/><rect x="48" y="24" width="24" height="24" fill="#f4f2fb" fill-opacity="0.95"/><rect x="71" y="24" width="1" height="24" fill="#ffffff" fill-opacity="0.95"/></g>
+<rect id="center" x="24" y="24" width="24" height="24" fill="#f4f2fb" fill-opacity="0.95"/>
+<rect id="hint-top-margin" x="100" y="0" width="14" height="14" fill="#000000" fill-opacity="0"/>
+<rect id="hint-bottom-margin" x="120" y="0" width="14" height="14" fill="#000000" fill-opacity="0"/>
+<rect id="hint-left-margin" x="140" y="0" width="14" height="14" fill="#000000" fill-opacity="0"/>
+<rect id="hint-right-margin" x="160" y="0" width="14" height="14" fill="#000000" fill-opacity="0"/>
+<rect id="hint-stretch-borders" x="100" y="30" width="4" height="4" fill="#000000" fill-opacity="0"/>
+</svg>

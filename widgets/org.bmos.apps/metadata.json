@@ -1,0 +1,18 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "bmos"
+            }
+        ],
+        "Category": "Application Launchers",
+        "Description": "Botão que abre a grade de todos os apps, e a busca no Alt+Espaço",
+        "Icon": "view-app-grid",
+        "Id": "org.bmos.apps",
+        "License": "GPL-3.0-or-later",
+        "Name": "Todos os apps e busca do bmos",
+        "Version": "0.1"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

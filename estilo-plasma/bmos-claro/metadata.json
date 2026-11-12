@@ -1,0 +1,15 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "bmos"
+            }
+        ],
+        "Description": "Barra transparente, dock e popups de vidro do bmos",
+        "Id": "bmos-claro",
+        "License": "GPL-3.0-or-later",
+        "Name": "bmos Claro",
+        "Version": "0.1"
+    },
+    "X-Plasma-API": "5.0"
+}

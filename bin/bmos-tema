@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# Aplica o visual do bmos no KDE Plasma: bmos-tema claro | escuro
+
+set -u
+
+case "${1:-}" in
+  claro) pacote=org.bmos.claro cores=BmosClaro icones=MacTahoe variante=Light plasma=bmos-claro ;;
+  escuro) pacote=org.bmos.escuro cores=BmosEscuro icones=MacTahoe-dark variante=Dark plasma=bmos-escuro ;;
+  *)
+    echo "Uso: bmos-tema claro|escuro" >&2
+    exit 2
+    ;;
+esac
+
+DADOS="${XDG_DATA_HOME:-$HOME/.local/share}"
+CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}"
+quieto() { "$@" >/dev/null 2>&1 || true; }
+
+# O tema global aplica o conjunto. Os comandos seguintes garantem cada parte,
+# porque nem toda versão do Plasma aplica tudo o que o pacote declara.
+quieto plasma-apply-lookandfeel -a "$pacote"
+quieto plasma-apply-colorscheme "$cores"
+quieto plasma-apply-desktoptheme "$plasma"
+quieto /usr/libexec/plasma-changeicons "$icones"
+quieto plasma-apply-wallpaperimage "$DADOS/wallpapers/bmos"
+
+# Tela de abertura (entre o login e a área de trabalho) e tela de bloqueio.
+# A tela de bloqueio é a do Plasma, com o papel de parede do bmos escurecido,
+# para o relógio branco ficar legível.
+kwriteconfig6 --file ksplashrc --group KSplash --key Engine KSplashQML
+kwriteconfig6 --file ksplashrc --group KSplash --key Theme "$pacote"
+kwriteconfig6 --file kscreenlockerrc --group Greeter --key WallpaperPlugin org.kde.image
+kwriteconfig6 --file kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.image --group General \
+  --key Image "file://$DADOS/wallpapers/bmos-bloqueio"
+kwriteconfig6 --file kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.image --group General \
+  --key PreviewImage "file://$DADOS/wallpapers/bmos-bloqueio"
+
+# Decoração das janelas, com os botões coloridos à esquerda.
+kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key library org.kde.kwin.aurorae
+kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key theme "__aurorae__svg__MacTahoe-$variante"
+kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnLeft XIA
+kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnRight ""
+quieto qdbus org.kde.KWin /KWin org.kde.KWin.reconfigure
+
+# Apps GTK. Os GTK4 não seguem o tema do sistema: leem ~/.config/gtk-4.0.
+quieto qdbus org.kde.GtkConfig /GtkConfig org.kde.GtkConfig.setGtkTheme "MacTahoe-$variante"
+origem="$DADOS/themes/MacTahoe-$variante/gtk-4.0"
+if [ -d "$origem" ]; then
+  mkdir -p "$CONFIG/gtk-4.0"
+  for item in assets windows-assets gtk.css gtk-dark.css; do
+    destino="$CONFIG/gtk-4.0/$item"
+    # Um arquivo de verdade ali é escolha do usuário: fica como está.
+    if [ -e "$origem/$item" ] && { [ -L "$destino" ] || [ ! -e "$destino" ]; }; then
+      ln -sfn "$origem/$item" "$destino"
+    fi
+  done
+fi
+
+mkdir -p "$CONFIG/bmos"
+echo "$1" >"$CONFIG/bmos/tema"

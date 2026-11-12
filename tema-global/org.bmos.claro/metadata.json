@@ -1,0 +1,17 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "bmos"
+            }
+        ],
+        "Category": "",
+        "Description": "Visual claro do bmos",
+        "Id": "org.bmos.claro",
+        "License": "GPL-3.0-or-later",
+        "Name": "bmos Claro",
+        "Version": "0.1"
+    },
+    "X-Plasma-APIVersion": "2"
+}

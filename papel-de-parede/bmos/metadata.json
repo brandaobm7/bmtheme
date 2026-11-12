@@ -1,0 +1,12 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "bmos"
+            }
+        ],
+        "Id": "bmos",
+        "License": "CC-BY-SA-4.0",
+        "Name": "bmos"
+    }
+}
