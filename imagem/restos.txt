@@ -22,3 +22,7 @@ btrfs-assistant
 rom-properties
 gerbilsoft
 fcitx
+krdc
+# Bold Brew: não é pacote. O Bazzite põe o atalho, o ajudante e o ícone soltos no
+# sistema, e eles saem por aqui. Decidido em 2026-11-12.
+bbrew

@@ -28,3 +28,6 @@ rom-properties*
 # carteira no login e a ligação dela com as contas online.
 pam-kwallet
 signon-kwallet-extension
+# Acesso à tela de outro computador pela rede. Decidido em 2026-11-12.
+krdc
+krdc-libs
