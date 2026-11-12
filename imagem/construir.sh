@@ -146,6 +146,13 @@ echo "Assinatura do tema: $(cat "$TEMA/assinatura")"
 # Restos dos apps removidos na pasta pessoal: cada usuário apaga os seus, vendo a lista.
 install -m 755 "$AQUI/limpar-restos" /usr/bin/bmos-limpar-restos
 
+# ------------------------------------------------------------------ tela de bloqueio
+passo "Tela de bloqueio com o desenho do bmos"
+# Relógio no meio enquanto descansa; ao mexer, ele vai para a esquerda e aparecem o
+# nome e o campo de senha. Se o Plasma mudar e as trocas não encaixarem, nada é
+# alterado e a tela fica como a do Plasma.
+python3 "$AQUI/tela-de-bloqueio.py"
+
 passo "Faxina da construção"
 dnf5 clean all >/dev/null 2>&1 || true
 rm -rf /tmp/* /var/tmp/* /var/cache/dnf /var/cache/libdnf5 /var/lib/dnf /var/log/dnf5.log* /var/cache/ldconfig /run/dnf /run/selinux-policy
