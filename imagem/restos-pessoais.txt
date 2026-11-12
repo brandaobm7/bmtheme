@@ -1,0 +1,62 @@
+# O que os apps removidos deixam na pasta pessoal de cada usuário: ajustes, caches
+# e dados. Um caminho por linha, a partir da pasta pessoal; vale o curinga "*".
+# Quem apaga é o comando bmos-limpar-restos, que mostra a lista e pede confirmação.
+# As linhas que começam com "flatpak:" são dados de um app em Flatpak, e só entram
+# na lista se o app não estiver instalado.
+
+# Kate
+.config/katerc
+.config/katevirc
+.config/kateschemarc
+.config/katesyntaxhighlightingrc
+.config/katemetainfos
+.config/kate
+.local/share/kate
+.local/state/katestaterc
+.cache/kate
+
+# KDE Connect
+.config/kdeconnect*
+.cache/kdeconnect*
+.local/share/kdeconnect*
+
+# Lutris (os jogos instalados por ele em ~/Games não entram)
+.config/lutris
+.local/share/lutris
+.cache/lutris
+
+# Waydroid
+.local/share/waydroid
+.local/share/applications/waydroid.*.desktop
+.local/share/applications/Waydroid.desktop
+
+# Sunshine, Input Remapper e ROM Properties
+.config/sunshine
+.config/input-remapper*
+.config/rom-properties
+.cache/rom-properties
+
+# Compartilhamento de tela (KRFB), carteira, busca, ajuda e registros do KDE
+.config/krfbrc
+.local/share/krfb
+.config/kwalletmanagerrc
+.config/kwalletmanager5rc
+.config/kfindrc
+.config/khelpcenterrc
+.local/share/khelpcenter
+.cache/khelpcenter
+.config/kdebugsettingsrc
+.config/kjournaldbrowserrc
+
+# Teclados de outros idiomas (fcitx5), Aplicativos Web e Btrfs Assistant
+.config/fcitx5
+.local/share/fcitx5
+.local/share/webapp-manager
+.config/btrfs-assistant*
+
+# Apps em Flatpak que a imagem retira
+flatpak:org.mozilla.firefox
+flatpak:org.kde.okular
+flatpak:com.ranfdev.DistroShelf
+flatpak:com.github.tchx84.Flatseal
+flatpak:io.github.flattool.Warehouse

@@ -128,6 +128,22 @@ for pacote in "$AQUI"/tema-global/org.bmos.*; do
   ln -sfn "$DADOS/wallpapers/bmos/contents/$fundo/3840x2400.png" "$destino/contents/splash/images/fundo.png"
 done
 install -m 755 "$AQUI/bin/bmos-tema" "$HOME/.local/bin/bmos-tema"
+# Ícone "Apps" da dock: abre a grade de todos os apps. Fica fora da própria grade.
+install -m 755 "$AQUI/bin/bmos-apps" "$HOME/.local/bin/bmos-apps"
+ICONE_DOS_APPS="$ESTADO/apps.svg"
+install -m 644 "$AQUI/paineis/apps.svg" "$ICONE_DOS_APPS"
+mkdir -p "$DADOS/applications"
+cat >"$DADOS/applications/org.bmos.grade.desktop" <<FIM
+[Desktop Entry]
+Type=Application
+Name=Apps
+Comment=Todos os apps
+Exec=$HOME/.local/bin/bmos-apps
+Icon=$ICONE_DOS_APPS
+Terminal=false
+NoDisplay=true
+StartupNotify=false
+FIM
 
 passo "Estilo dos painéis e widgets da barra"
 mkdir -p "$DADOS/plasma/desktoptheme" "$DADOS/plasma/plasmoids"
@@ -361,6 +377,7 @@ if [ ! -f "$ESTADO/paineis" ]; then
 $(cat "$AQUI/paineis/montar.js")" 2>/dev/null) \
      && [ -n "$barra" ] && [ "$barra" -gt 0 ] 2>/dev/null; then
     date +%s >"$ESTADO/paineis"
+    : >"$ESTADO/apps-na-dock"
     # Popups da barra soltos dela, com os quatro cantos redondos. O roteiro dos painéis
     # não alcança esse ajuste: ele fica no arquivo de configuração e vale ao reiniciar.
     kwriteconfig6 --file plasmashellrc --group PlasmaViews --group "Panel $barra" --key floatingApplets 1
@@ -371,6 +388,12 @@ $(cat "$AQUI/paineis/montar.js")" 2>/dev/null) \
 else
   passo "Recarregando a barra e a dock"
   reiniciar_area_de_trabalho
+  # Quem instalou antes de existir o ícone "Apps" ganha o ícone na dock, uma vez só:
+  # se a pessoa tirar depois, ele não volta.
+  if [ ! -f "$ESTADO/apps-na-dock" ]; then
+    qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "$(cat "$AQUI/paineis/apps-na-dock.js")" >/dev/null 2>&1 \
+      && : >"$ESTADO/apps-na-dock"
+  fi
 fi
 
 # ------------------------------------------------------------------ busca no Alt+Espaço

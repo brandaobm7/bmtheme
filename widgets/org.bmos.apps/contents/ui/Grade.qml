@@ -11,6 +11,7 @@ PlasmaCore.Window {
     id: janela
 
     property var apps: []
+    property double fechadaEm: 0    // hora em que a grade foi fechada pela última vez
     signal aberta()
     signal escolhido(string caminho)
 
@@ -35,7 +36,16 @@ PlasmaCore.Window {
         campo.forceActiveFocus()
         entrada.restart()
     }
-    function esconder() { visible = false }
+    function esconder() {
+        visible = false
+        fechadaEm = Date.now()
+    }
+    // Pedido de fora, pelo ícone da dock. Com a grade aberta, o próprio clique na
+    // dock já a fecha, por tirar o foco dela: aí o pedido não a abre de novo.
+    function pedir() {
+        if (visible || Date.now() - fechadaEm > 700)
+            alternar()
+    }
     function abrir(app) {
         if (!app)
             return

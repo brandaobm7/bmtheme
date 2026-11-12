@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# bmos-limpar-restos: apaga da pasta pessoal o que os apps removidos pela imagem
+# bmos deixaram: ajustes, caches e dados. Mostra a lista e pede confirmação.
+#
+# Uso: bmos-limpar-restos           mostra e pergunta
+#      bmos-limpar-restos --sim     apaga sem perguntar
+#      bmos-limpar-restos --ver     só mostra
+set -euo pipefail
+shopt -s nullglob
+
+LISTA="${BMOS_RESTOS:-/usr/share/bmtheme/imagem/restos-pessoais.txt}"
+[ -f "$LISTA" ] || { echo "Erro: não achei a lista $LISTA." >&2; exit 1; }
+[ "$(id -u)" -ne 0 ] || { echo "Erro: rode como o seu usuário, sem sudo." >&2; exit 1; }
+
+achados=()
+while IFS= read -r linha; do
+  case "$linha" in
+    flatpak:*)
+      app="${linha#flatpak:}"
+      # Os dados só são resto se o app não está mais instalado.
+      flatpak info "$app" >/dev/null 2>&1 && continue
+      [ -e "$HOME/.var/app/$app" ] && achados+=("$HOME/.var/app/$app")
+      ;;
+    *)
+      for caminho in "$HOME"/$linha; do    # sem aspas no fim: a linha pode ter curinga
+        if [ -e "$caminho" ] || [ -L "$caminho" ]; then
+          achados+=("$caminho")
+        fi
+      done
+      ;;
+  esac
+done < <(grep -v -E '^\s*(#|$)' "$LISTA")
+
+if [ "${#achados[@]}" -eq 0 ]; then
+  echo "Nenhum resto dos apps removidos na sua pasta pessoal."
+  exit 0
+fi
+
+echo "Restos dos apps removidos na sua pasta pessoal:"
+for caminho in "${achados[@]}"; do
+  printf '  %6s  %s\n' "$(du -sh "$caminho" 2>/dev/null | cut -f1)" "~${caminho#"$HOME"}"
+done
+printf 'Total: %s\n' "$(du -sch "${achados[@]}" 2>/dev/null | tail -1 | cut -f1)"
+
+case "${1:-}" in
+  --ver) exit 0 ;;
+  --sim) ;;
+  *)
+    printf 'Apagar tudo isso? Não dá para desfazer. [s/N] '
+    read -r resposta
+    case "$resposta" in s | S | sim | Sim) ;; *) echo "Nada foi apagado."; exit 0 ;; esac
+    ;;
+esac
+for caminho in "${achados[@]}"; do
+  # Só o que está dentro da pasta pessoal, e nunca ela mesma.
+  case "$caminho" in "$HOME"/?*) rm -rf -- "$caminho" ;; esac
+done
+echo "Restos apagados."

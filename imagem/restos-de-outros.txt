@@ -1,0 +1,27 @@
+# Arquivos que pertencem a pacotes que continuam instalados, mas só servem a um
+# app removido. Um caminho por linha; vale o curinga "*".
+# Cada linha entra aqui depois de conferida no relatório que restos.sh mostra na
+# construção ("Ficaram, por pertencerem a pacotes que continuam instalados").
+
+# KDE Connect: a opção "enviar para o aparelho" do menu de compartilhar, a regra
+# de firewall e o complemento de comandos.
+/usr/lib64/qt6/plugins/kf6/purpose/kdeconnectplugin.so
+/usr/lib64/qt6/plugins/kf6/purpose/kdeconnectsmsplugin.so
+/usr/lib64/qt6/qml/org/kde/purpose/kdeconnect
+/usr/share/kf6/purpose/kdeconnectplugin_config.qml
+/usr/share/locale/*/LC_MESSAGES/purpose6_kdeconnect.mo
+/usr/share/locale/*/LC_MESSAGES/purpose6_kdeconnectsms.mo
+/usr/lib/firewalld/services/kdeconnect.xml
+/usr/share/fish/completions/kdeconnect-cli.fish
+
+# Waydroid: complemento de comandos.
+/usr/share/bash-completion/completions-fallback/waydroid.bash
+/usr/share/fish/completions/waydroid.fish
+
+# Atalho do Bazzite que instala e abre o Warehouse.
+/usr/bin/warehouse-helper
+
+# O que o Bazzite põe na pasta pessoal de cada usuário novo: o assistente dele
+# abrindo no primeiro login e as pastas do Firefox.
+/etc/skel/.config/autostart/bazzite-portal.desktop
+/etc/skel/.config/mozilla

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="fundo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8f9bff"/>
+      <stop offset="1" stop-color="#4f5ed8"/>
+    </linearGradient>
+    <linearGradient id="brilho" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.38"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="11" y="11" width="234" height="234" rx="56" fill="url(#fundo)"/>
+  <rect x="12.5" y="12.5" width="231" height="231" rx="54.5" fill="none" stroke="url(#brilho)" stroke-width="3"/>
+  <rect x="45" y="45" width="44" height="44" rx="12" fill="#ffffff" fill-opacity="0.97"/>
+  <rect x="106" y="45" width="44" height="44" rx="12" fill="#ffffff" fill-opacity="0.92"/>
+  <rect x="167" y="45" width="44" height="44" rx="12" fill="#ffffff" fill-opacity="0.87"/>
+  <rect x="45" y="106" width="44" height="44" rx="12" fill="#ffffff" fill-opacity="0.92"/>
+  <rect x="106" y="106" width="44" height="44" rx="12" fill="#ffffff" fill-opacity="0.87"/>
+  <rect x="167" y="106" width="44" height="44" rx="12" fill="#ffffff" fill-opacity="0.82"/>
+  <rect x="45" y="167" width="44" height="44" rx="12" fill="#ffffff" fill-opacity="0.87"/>
+  <rect x="106" y="167" width="44" height="44" rx="12" fill="#ffffff" fill-opacity="0.82"/>
+  <rect x="167" y="167" width="44" height="44" rx="12" fill="#ffffff" fill-opacity="0.77"/>
+</svg>

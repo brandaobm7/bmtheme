@@ -87,6 +87,7 @@ rm -rf "$DADOS/wallpapers/bmos" "$DADOS/wallpapers/bmos-bloqueio" "$DADOS/fonts/
   "$DADOS/aurorae/themes/MacTahoe-Light" "$DADOS/aurorae/themes/MacTahoe-Dark" \
   "$DADOS/themes/MacTahoe-Light" "$DADOS/themes/MacTahoe-Dark" \
   "$HOME/.local/bin/bmos-tema" "$HOME/.local/bin/bmos-arquivos" "$HOME/.local/bin/bmos-ajustes" \
+  "$HOME/.local/bin/bmos-apps" "$DADOS/applications/org.bmos.grade.desktop" \
   "$DADOS/applications/org.bmos.arquivos.desktop" "$DADOS/applications/org.bmos.ajustes.desktop"
 rm -rf "$DADOS"/icons/MacTahoe "$DADOS"/icons/MacTahoe-light "$DADOS"/icons/MacTahoe-dark
 quieto fc-cache -f "$DADOS/fonts"

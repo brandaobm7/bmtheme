@@ -23,6 +23,7 @@ PlasmoidItem {
         perfilDisponivel: false, perfil: "alto", perfis: [],
         tema: "claro", luzDisponivel: false, luzNoturna: false
     })
+    property bool lido: false       // já chegou a primeira leitura do sistema
     property string pagina: "principal"
     property int pedido: 0          // número do último comando enviado
     property int acoes: 0           // ações ainda sem resposta
@@ -72,9 +73,19 @@ PlasmoidItem {
         espera = fila
         envioLento.start()
     }
+    // Volume e brilho mudam por fora da Central, pelo teclado ou pelo Ajustes.
+    // A leitura só vale se nenhum comando saiu depois dela.
+    function lerRapido() {
+        if (acoes === 0 && !envioLento.running)
+            leve.connectSource(ajudante + " rapido # " + pedido + " " + Date.now())
+    }
     function abrir(programa) {
         expanded = false
         lancador.connectSource(programa + " >/dev/null 2>&1 &")
+    }
+    function energia(acao) {
+        expanded = false
+        lancador.connectSource(ajudante + " energia " + acao + " >/dev/null 2>&1 # " + Date.now())
     }
     // Abre uma página do Ajustes do bmos. Sem o app (o download do PySide6 pode ter
     // falhado na instalação), abre o módulo das Configurações do Sistema no lugar.
@@ -94,8 +105,23 @@ PlasmoidItem {
                 return
             try {
                 raiz.e = JSON.parse(dados.stdout)
+                raiz.lido = true
             } catch (erro) {
                 // Resposta incompleta: fica com o estado anterior até a próxima leitura.
+            }
+        }
+    }
+    P5Support.DataSource {
+        id: leve
+        engine: "executable"
+        onNewData: (origem, dados) => {
+            disconnectSource(origem)
+            if (raiz.acoes !== 0 || envioLento.running || parseInt(origem.split(" # ").pop()) !== raiz.pedido)
+                return
+            try {
+                raiz.e = Object.assign({}, raiz.e, JSON.parse(dados.stdout))
+            } catch (erro) {
+                // Resposta incompleta: vale a próxima.
             }
         }
     }
@@ -123,6 +149,13 @@ PlasmoidItem {
         repeat: true
         triggeredOnStart: true
         onTriggered: raiz.ler()
+    }
+    // Aberta, acompanha o volume e o brilho de perto, para andar junto com o teclado.
+    Timer {
+        interval: 700
+        running: raiz.expanded
+        repeat: true
+        onTriggered: raiz.lerRapido()
     }
     onExpandedChanged: (aberta) => {
         if (aberta)
@@ -210,6 +243,33 @@ PlasmoidItem {
         Circulo { id: botao; anchors.centerIn: parent; tamanho: 56; onClicado: parent.clicado() }
     }
 
+    // Botão largo da fileira de energia: ícone e nome.
+    component Energia: Rectangle {
+        id: energia
+        property string nome: ""
+        property string texto: ""
+        signal clicado()
+        Layout.fillWidth: true
+        Layout.preferredWidth: 1
+        implicitHeight: 48
+        radius: 24
+        color: toque.containsMouse ? paleta.botaoSobre
+                                   : (paleta.escuro ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(1, 1, 1, 0.55))
+        Row {
+            anchors.centerIn: parent
+            spacing: 9
+            Icone { anchors.verticalCenter: parent.verticalCenter; nome: energia.nome; tamanho: 18 }
+            Texto { anchors.verticalCenter: parent.verticalCenter; text: energia.texto; font.pixelSize: 14; font.weight: Font.Medium }
+        }
+        MouseArea {
+            id: toque
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: energia.clicado()
+        }
+    }
+
     // ---------------- painel ----------------
 
     fullRepresentation: Item {
@@ -260,7 +320,7 @@ PlasmoidItem {
                                 Layout.fillWidth: true
                                 nome: raiz.e.wifiLigado ? "wifi" : "wifi-off"
                                 titulo: "Wi-Fi"
-                                situacao: !raiz.e.wifiDisponivel ? "Sem placa Wi-Fi"
+                                situacao: !raiz.lido ? "" : !raiz.e.wifiDisponivel ? "Sem placa Wi-Fi"
                                           : (!raiz.e.wifiLigado ? "Desligado"
                                           : (raiz.e.wifiRede !== "" ? raiz.e.wifiRede : "Não conectado"))
                                 ligado: raiz.e.wifiLigado && raiz.e.wifiDisponivel
@@ -386,6 +446,22 @@ PlasmoidItem {
                             }
                         }
                     }
+                }
+            }
+
+            // Energia: suspender, reiniciar e desligar. Os dois últimos pedem confirmação.
+            Cartao {
+                visible: raiz.pagina === "principal"
+                Layout.fillWidth: true
+                Layout.topMargin: 12
+                implicitHeight: 48 + 28
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 14
+                    spacing: 10
+                    Energia { nome: "zzz"; texto: "Suspender"; onClicado: raiz.energia("suspender") }
+                    Energia { nome: "rotate-clockwise"; texto: "Reiniciar"; onClicado: raiz.energia("reiniciar") }
+                    Energia { nome: "power"; texto: "Desligar"; onClicado: raiz.energia("desligar") }
                 }
             }
 

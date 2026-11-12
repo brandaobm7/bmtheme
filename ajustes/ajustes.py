@@ -16,7 +16,9 @@ import glob
 import json
 import os
 import re
+import atexit
 import shutil
+import subprocess
 import threading
 import time
 
@@ -32,6 +34,9 @@ DADOS = os.environ.get("XDG_DATA_HOME") or os.path.join(CASA, ".local/share")
 ESTADO = os.path.join(DADOS, "bmos-tema")
 PERFIS = {"power-saver": "economico", "balanced": "alto", "performance": "game"}
 PERFIS_DBUS = ("net.hadess.PowerProfiles", "org.freedesktop.UPower.PowerProfiles")
+# Brilho da tela. Do Plasma 6.2 em diante existe um controle por tela (TELAS).
+# O anterior (BRILHO) fica de reserva para as versões mais antigas.
+TELAS = ("org.kde.ScreenBrightness", "/org/kde/ScreenBrightness")
 BRILHO = ("org.kde.Solid.PowerManagement", "/org/kde/Solid/PowerManagement/Actions/BrightnessControl",
           "org.kde.Solid.PowerManagement.Actions.BrightnessControl")
 MINUTOS = [("0", "Nunca"), ("1", "1 minuto"), ("2", "2 minutos"), ("5", "5 minutos"), ("10", "10 minutos"),
@@ -77,6 +82,42 @@ def dbus(barramento, destino, caminho, interface, *resto):
 
 # ====================================================================== tela
 
+def tela_do_brilho():
+    """Caminho da tela embutida no controle de brilho por tela, ou None se ele não existe."""
+    codigo, saida = rodar(["busctl", "--user", "get-property", *TELAS, TELAS[0], "DisplaysDBusNames"], 5)
+    nomes = re.findall(r'"([^"]+)"', saida) if codigo == 0 else []
+    for nome in nomes:
+        caminho = f"{TELAS[1]}/{nome}"
+        if dbus("--user", TELAS[0], caminho, TELAS[0] + ".Display", "get-property", "IsInternal") == "true":
+            return caminho
+    return f"{TELAS[1]}/{nomes[0]}" if nomes else None
+
+
+def brilho_da_tela():
+    """(atual, máximo, caminho da tela). O caminho é None quando vale o controle antigo."""
+    tela = tela_do_brilho()
+    if tela:
+        _, saida = rodar(["busctl", "--user", "get-property", TELAS[0], tela, TELAS[0] + ".Display",
+                          "Brightness", "MaxBrightness"], 5)
+        numeros = re.findall(r"^i (\d+)$", saida, re.M)
+        if len(numeros) == 2 and int(numeros[1]) > 0:
+            return int(numeros[0]), int(numeros[1]), tela
+    atual, maximo = dbus("--user", *BRILHO, "call", "brightness"), dbus("--user", *BRILHO, "call", "brightnessMax")
+    if atual and maximo and atual.isdigit() and maximo.isdigit() and int(maximo) > 0:
+        return int(atual), int(maximo), None
+    return None, None, None
+
+
+def ler_brilho():
+    """Só o brilho: é o que muda por fora do Ajustes, pelo teclado ou pela Central."""
+    v = {"tela.temBrilho": False}
+    if glob.glob("/sys/class/backlight/*"):
+        atual, maximo, _ = brilho_da_tela()
+        if maximo:
+            v["tela.temBrilho"], v["tela.brilho"] = True, round(atual * 100 / maximo)
+    return v, {}
+
+
 def monitor():
     """O monitor principal ligado, como o kscreen-doctor descreve."""
     codigo, saida = rodar(["kscreen-doctor", "-j"], 8)
@@ -89,7 +130,7 @@ def monitor():
 
 
 def ler_tela():
-    v, o = {"tela.temMonitor": False, "tela.temBrilho": False}, {}
+    v, o = {"tela.temMonitor": False, **ler_brilho()[0]}, {}
     m = monitor()
     if m:
         modos = m.get("modes", [])
@@ -109,10 +150,6 @@ def ler_tela():
         v["tela.escala"] = str(round(float(m.get("scale") or 1) * 100))
         o["tela.escala"] = opcoes((p, p + "%") for p in ("100", "125", "150", "200"))
         v["tela.temMonitor"] = True
-    if glob.glob("/sys/class/backlight/*"):
-        atual_b, maximo = dbus("--user", *BRILHO, "call", "brightness"), dbus("--user", *BRILHO, "call", "brightnessMax")
-        if atual_b and maximo and atual_b.isdigit() and maximo.isdigit() and int(maximo) > 0:
-            v["tela.temBrilho"], v["tela.brilho"] = True, round(int(atual_b) * 100 / int(maximo))
     ativa = config("kwinrc", ["NightColor"], "Active", "false") == "true"
     modo = config("kwinrc", ["NightColor"], "Mode", "")
     v["tela.luz"] = "desligada" if not ativa else ("sempre" if modo == "Constant" else "anoitecer")
@@ -185,10 +222,14 @@ def gravar_bloqueio(minutos):
 
 
 def gravar_brilho(valor):
-    maximo = dbus("--user", *BRILHO, "call", "brightnessMax")
-    if maximo and maximo.isdigit():
-        alvo = round(int(maximo) * max(1, min(100, int(valor))) / 100)
-        rodar(["busctl", "--user", "call", *BRILHO, "setBrightnessSilent", "i", str(alvo)], 5)
+    # A mudança mostra o aviso de brilho do Plasma, como a tecla do teclado.
+    _, maximo, tela = brilho_da_tela()
+    if maximo:
+        alvo = str(round(maximo * max(1, min(100, int(valor))) / 100))
+        if tela:
+            rodar(["busctl", "--user", "call", TELAS[0], tela, TELAS[0] + ".Display", "SetBrightness", "iu", alvo, "0"], 5)
+        else:
+            rodar(["busctl", "--user", "call", *BRILHO, "setBrightness", "i", alvo], 5)
 
 
 def gravar_escala(valor):
@@ -327,11 +368,16 @@ def campos_nmcli(linha):
     return [c.replace("\\:", ":").replace("\\\\", "\\") for c in re.split(r"(?<!\\):", linha)]
 
 
-def ler_wifi():
+def ler_wifi_rapido():
+    """Se há placa e se está ligada. Sai antes da lista de redes, que demora a chegar."""
     _, aparelhos = rodar(["nmcli", "-t", "-f", "TYPE", "device"], 6)
     tem = "wifi" in aparelhos.splitlines()
     _, radio = rodar(["nmcli", "-t", "-f", "WIFI", "general"], 6)
-    v = {"wifi.tem": tem, "wifi.ligado": tem and radio == "enabled", "wifi.redes": []}
+    return {"wifi.tem": tem, "wifi.ligado": tem and radio == "enabled"}, {}
+
+
+def ler_wifi():
+    v = {**ler_wifi_rapido()[0], "wifi.redes": []}
     if v["wifi.ligado"]:
         _, salvas = rodar(["nmcli", "-t", "-f", "NAME,TYPE", "connection", "show"], 6)
         conhecidas = {campos_nmcli(l)[0] for l in salvas.splitlines() if l.endswith("wireless")}
@@ -456,6 +502,17 @@ LER = {"wifi": ler_wifi, "bluetooth": ler_bluetooth, "tela": ler_tela, "som": le
        "perfis": ler_perfis, "atualizacoes": ler_atualizacoes, "hardware": ler_hardware, "data": ler_data,
        "sobre": ler_sobre}
 
+# Parte de uma página que sai na hora, antes da leitura completa.
+LER_RAPIDO = {"wifi": ler_wifi_rapido}
+# O que acompanhar por fora do Ajustes: o comando que avisa das mudanças e o que ler de novo.
+VIGIAS = [
+    (["pactl", "subscribe"], re.compile(r"on (sink|source|server) "), "som"),
+    (["busctl", "--user", "monitor",
+      "--match", "type='signal',interface='org.kde.ScreenBrightness',member='BrightnessChanged'",
+      "--match", f"type='signal',interface='{BRILHO[2]}',member='brightnessChanged'"],
+     re.compile(r"Type=signal"), "brilho"),
+]
+
 GRAVAR = {
     "tela.escala": gravar_escala,
     "tela.brilho": gravar_brilho,
@@ -488,6 +545,7 @@ class Ajustes(QObject):
     def __init__(self):
         super().__init__()
         self._valores, self._opcoes = {}, {}
+        self._lidas = set()     # páginas que já tiveram uma leitura completa
         self._trava = threading.Lock()
         # Resolução ou taxa trocada, à espera de confirmação: (monitor, modo anterior).
         self._modo_anterior = None
@@ -506,12 +564,46 @@ class Ajustes(QObject):
         self.mudou.emit()
 
     def _ler(self, pagina):
-        leitor = LER.get(pagina)
+        leitor = ler_brilho if pagina == "brilho" else LER.get(pagina)
         if leitor:
             try:
+                rapido = LER_RAPIDO.get(pagina)
+                if rapido and pagina not in self._lidas:
+                    self._juntar(*rapido())
                 self._juntar(*leitor())
+                self._lidas.add(pagina)
             except Exception as erro:  # uma página com erro não derruba as outras
                 print(f"ajustes: erro ao ler {pagina}: {erro}", flush=True)
+
+    def vigiar(self):
+        """Acompanha o volume e o brilho mudados por fora (teclado, Central), para a tela andar junto."""
+        for comando, padrao, pagina in VIGIAS:
+            threading.Thread(target=self._vigia, args=(comando, padrao, pagina), daemon=True).start()
+
+    def _vigia(self, comando, padrao, pagina):
+        # Sem o stdbuf, o aviso pode ficar preso na saída do comando até juntar muitos.
+        if shutil.which("stdbuf"):
+            comando = ["stdbuf", "-oL", *comando]
+        # O setpriv faz o comando terminar junto com o Ajustes, mesmo se o Ajustes for derrubado.
+        if shutil.which("setpriv"):
+            comando = ["setpriv", "--pdeathsig", "TERM", *comando]
+        try:
+            # Em inglês: o texto dos avisos muda com o idioma do sistema.
+            processo = subprocess.Popen(comando, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+                                        env={**os.environ, "LC_ALL": "C"})
+        except OSError:
+            return
+        atexit.register(processo.terminate)
+        espera = None
+        for linha in processo.stdout:
+            if not padrao.search(linha):
+                continue
+            # Arrastar uma barra gera muitos avisos seguidos: lê uma vez, logo depois do último.
+            if espera:
+                espera.cancel()
+            espera = threading.Timer(0.06, self._ler, args=(pagina,))
+            espera.daemon = True
+            espera.start()
 
     @Slot(str)
     def atualizar(self, pagina):

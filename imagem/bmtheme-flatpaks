@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-# Apps em Flatpak da imagem bmos. Roda no boot, como serviço do sistema.
+# Apps em Flatpak da imagem bmos e restos na máquina. Roda no boot, como serviço do sistema.
 # Instala os de imagem/flatpaks-entrar.txt e tira os de imagem/flatpaks-sair.txt.
 # Cada app é tratado uma única vez: quem instalar de novo um app que saiu, ou
 # tirar um que entrou, fica com a própria escolha.
@@ -36,11 +36,27 @@ if [ "${#pendentes[@]}" -gt 0 ]; then
   done
 fi
 
+saiu_algum=""
 while read -r app; do
   feito "-$app" && continue
-  # Os dados do app na pasta pessoal ficam: reinstalar traz tudo de volta.
-  if ! instalado "$app" || flatpak uninstall --system --noninteractive "$app"; then
+  # Os dados do app na pasta pessoal ficam: quem os apaga é o bmos-limpar-restos, com a pessoa vendo.
+  if ! instalado "$app"; then
     echo "-$app" >>"$FEITOS"
+  elif flatpak uninstall --system --noninteractive "$app"; then
+    echo "-$app" >>"$FEITOS"
+    saiu_algum=1
   fi
 done < <(linhas "$LISTAS/flatpaks-sair.txt")
+
+# Restos dos apps retirados. As bibliotecas que só eles usavam saem na hora da remoção.
+# As permissões que o Bazzite grava para eles a cada versão saem em todo boot.
+[ -n "$saiu_algum" ] && flatpak uninstall --system --unused --noninteractive
+while read -r app; do
+  instalado "$app" || rm -f "/var/lib/flatpak/overrides/$app"
+done < <(linhas "$LISTAS/flatpaks-sair.txt")
+# O Bazzite prepara uma pasta de ajustes do Firefox em toda máquina, mesmo sem ele.
+instalado org.mozilla.firefox || rm -rf /var/lib/flatpak/extension/org.mozilla.firefox.systemconfig
+# Imagens do Android que o Waydroid baixou. Os dados dos apps do Android ficam na
+# pasta pessoal e são do bmos-limpar-restos.
+command -v waydroid >/dev/null 2>&1 || rm -rf /var/lib/waydroid
 exit 0

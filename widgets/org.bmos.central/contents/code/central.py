@@ -6,6 +6,7 @@ Só usa a biblioteca padrão do Python e comandos que já vêm no sistema
 
 Uso:
   central.py estado                     mostra o estado em JSON
+  central.py rapido                     só volume e brilho, para acompanhar o teclado
   central.py wifi ligar|desligar
   central.py bluetooth ligar|desligar
   central.py volume 0-100
@@ -14,6 +15,7 @@ Uso:
   central.py perfil economico|alto|game
   central.py tema claro|escuro
   central.py luz ligar|desligar         luz noturna
+  central.py energia suspender|reiniciar|desligar
 """
 
 import glob
@@ -27,8 +29,12 @@ import sys
 # Nomes do bmos para os perfis de energia do sistema.
 PERFIS = {"power-saver": "economico", "balanced": "alto", "performance": "game"}
 PERFIS_DBUS = ("net.hadess.PowerProfiles", "org.freedesktop.UPower.PowerProfiles")
+# Brilho da tela. Do Plasma 6.2 em diante existe um controle por tela (TELAS).
+# O anterior (BRILHO) fica de reserva para as versões mais antigas.
+TELAS = ("org.kde.ScreenBrightness", "/org/kde/ScreenBrightness")
 BRILHO = ("org.kde.Solid.PowerManagement", "/org/kde/Solid/PowerManagement/Actions/BrightnessControl",
           "org.kde.Solid.PowerManagement.Actions.BrightnessControl")
+SAIR = ("org.kde.LogoutPrompt", "/LogoutPrompt", "org.kde.LogoutPrompt")
 LUZ = ("org.kde.KWin", "/org/kde/KWin/NightLight", "org.kde.KWin.NightLight")
 
 
@@ -100,15 +106,41 @@ def ler_som():
     return e
 
 
+def tela_do_brilho():
+    """Caminho da tela embutida no controle de brilho por tela, ou None se ele não existe."""
+    codigo, saida = rodar(["busctl", "--user", "get-property", *TELAS, TELAS[0], "DisplaysDBusNames"])
+    nomes = re.findall(r'"([^"]+)"', saida) if codigo == 0 else []
+    for nome in nomes:
+        caminho = f"{TELAS[1]}/{nome}"
+        if dbus("--user", TELAS[0], caminho, TELAS[0] + ".Display", "get-property", "IsInternal") == "true":
+            return caminho
+    return f"{TELAS[1]}/{nomes[0]}" if nomes else None
+
+
+def brilho_da_tela():
+    """(atual, máximo, caminho da tela). O caminho é None quando vale o controle antigo."""
+    tela = tela_do_brilho()
+    if tela:
+        _, saida = rodar(["busctl", "--user", "get-property", TELAS[0], tela, TELAS[0] + ".Display",
+                          "Brightness", "MaxBrightness"])
+        numeros = re.findall(r"^i (\d+)$", saida, re.M)
+        if len(numeros) == 2 and int(numeros[1]) > 0:
+            return int(numeros[0]), int(numeros[1]), tela
+    atual = dbus("--user", *BRILHO, "call", "brightness")
+    maximo = dbus("--user", *BRILHO, "call", "brightnessMax")
+    if atual and maximo and atual.isdigit() and maximo.isdigit() and int(maximo) > 0:
+        return int(atual), int(maximo), None
+    return None, None, None
+
+
 def ler_brilho():
     e = {"brilhoDisponivel": False, "brilho": 0}
     if not glob.glob("/sys/class/backlight/*"):
         return e
-    atual = dbus("--user", *BRILHO, "call", "brightness")
-    maximo = dbus("--user", *BRILHO, "call", "brightnessMax")
-    if atual and maximo and atual.isdigit() and maximo.isdigit() and int(maximo) > 0:
+    atual, maximo, _ = brilho_da_tela()
+    if maximo:
         e["brilhoDisponivel"] = True
-        e["brilho"] = round(int(atual) * 100 / int(maximo))
+        e["brilho"] = round(atual * 100 / maximo)
     return e
 
 
@@ -190,10 +222,14 @@ def acao(nome, valor):
     elif nome == "mudo":
         rodar(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"])
     elif nome == "brilho":
-        maximo = dbus("--user", *BRILHO, "call", "brightnessMax")
-        if maximo and maximo.isdigit():
-            alvo = round(int(maximo) * numero(valor, 1, 100) / 100)
-            rodar(["busctl", "--user", "call", *BRILHO, "setBrightnessSilent", "i", str(alvo)])
+        # A mudança mostra o aviso de brilho do Plasma, como a tecla do teclado.
+        _, maximo, tela = brilho_da_tela()
+        if maximo:
+            alvo = str(round(maximo * numero(valor, 1, 100) / 100))
+            if tela:
+                rodar(["busctl", "--user", "call", TELAS[0], tela, TELAS[0] + ".Display", "SetBrightness", "iu", alvo, "0"])
+            else:
+                rodar(["busctl", "--user", "call", *BRILHO, "setBrightness", "i", alvo])
     elif nome == "perfil":
         servico, caminho, _ = servico_perfis()
         alvo = {v: k for k, v in PERFIS.items()}.get(valor)
@@ -211,6 +247,12 @@ def acao(nome, valor):
             rodar(["kwriteconfig6", "--notify", "--file", "kwinrc", "--group", "NightColor", "--key", "Mode", "Constant"])
         rodar(["kwriteconfig6", "--notify", "--file", "kwinrc", "--group", "NightColor", "--key", "Active",
                "true" if valor == "ligar" else "false"])
+    elif nome == "energia":
+        # Reiniciar e desligar abrem a tela de confirmação do Plasma, com a contagem.
+        if valor == "suspender":
+            rodar(["systemctl", "suspend"])
+        elif valor in ("reiniciar", "desligar"):
+            rodar(["busctl", "--user", "call", *SAIR, "promptReboot" if valor == "reiniciar" else "promptShutDown"])
     else:
         sys.exit(2)
 
@@ -219,6 +261,9 @@ def principal():
     if len(sys.argv) < 2:
         print(__doc__)
         return 2
+    if sys.argv[1] == "rapido":
+        print(json.dumps({**ler_som(), **ler_brilho()}))
+        return 0
     if sys.argv[1] != "estado":
         acao(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else "")
     print(json.dumps(estado(), ensure_ascii=False))

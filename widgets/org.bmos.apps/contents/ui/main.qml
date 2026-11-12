@@ -1,6 +1,6 @@
 // Botão "Todos os apps" da barra superior do bmos.
-// O clique abre a grade de apps em tela cheia. O atalho do widget (Alt+Espaço,
-// posto pelo instalador) abre a busca.
+// O clique abre a grade de apps em tela cheia, e o ícone "Apps" da dock também.
+// O atalho do widget (Alt+Espaço, posto pelo instalador) abre a busca.
 import QtQuick
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
@@ -26,6 +26,11 @@ PlasmoidItem {
     }
 
     Plasmoid.onActivated: busca.alternar()
+    // O ícone "Apps" da dock pede a grade gravando a hora do pedido neste ajuste do widget.
+    Connections {
+        target: Plasmoid.configuration
+        function onPedidoDaGradeChanged() { grade.pedir() }
+    }
     Component.onCompleted: lerApps()
 
     P5Support.DataSource {

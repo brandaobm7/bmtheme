@@ -1,0 +1,15 @@
+#!/bin/sh
+# Abre ou fecha a grade de todos os apps do bmos. É o que o ícone "Apps" da dock chama.
+# O pedido chega ao widget da barra superior por um ajuste dele: a hora do pedido.
+QDBUS="$(command -v qdbus6 || command -v qdbus-qt6 || command -v qdbus)" || exit 1
+exec "$QDBUS" org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
+var paineis = panels();
+for (var i = 0; i < paineis.length; i++) {
+    var itens = paineis[i].widgets();
+    for (var j = 0; j < itens.length; j++) {
+        if (itens[j].type === "org.bmos.apps") {
+            itens[j].currentConfigGroup = ["General"];
+            itens[j].writeConfig("pedidoDaGrade", String(Date.now()));
+        }
+    }
+}' >/dev/null

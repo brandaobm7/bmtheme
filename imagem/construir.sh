@@ -28,6 +28,7 @@ done < <(linhas "$AQUI/remover.txt")
 if [ "${#sair[@]}" -gt 0 ]; then
   printf 'Saem: %s\n' "${sair[*]}"
   rpm -qa --qf '%{NAME}\n' | sort -u >"$HOME/antes"
+  bash "$AQUI/restos.sh" antes "${sair[@]}"
   dnf5 -y remove --no-autoremove "${sair[@]}"
   rpm -qa --qf '%{NAME}\n' | sort -u >"$HOME/depois"
   # Tirar um pacote leva junto quem depende dele. Se saiu qualquer coisa além da
@@ -37,7 +38,37 @@ if [ "${#sair[@]}" -gt 0 ]; then
     printf 'Erro: a limpeza tirou pacotes que não estão na lista:\n%s\n' "$a_mais" >&2
     exit 1
   fi
+
+  passo "Limpeza: restos dos pacotes removidos"
+  bash "$AQUI/restos.sh" depois
 fi
+
+passo "Limpeza: padrões que apontavam para apps removidos"
+# O ujust carrega uma lista de receitas. A de um app removido saiu acima: a linha
+# que a carrega sai junto, ou o ujust inteiro para de funcionar.
+receitas=/usr/share/ublue-os/justfile
+if [ -f "$receitas" ]; then
+  while IFS= read -r arquivo; do
+    [ -e "$arquivo" ] && continue
+    sed -i "\|^import \"$arquivo\"|d" "$receitas"
+    echo "  receita descarregada: $arquivo"
+  done < <(sed -n 's/^import "\(.*\)"$/\1/p' "$receitas")
+  ujust --list >/dev/null || { echo "Erro: o ujust parou de funcionar depois da limpeza." >&2; exit 1; }
+fi
+# App padrão de cada tipo de arquivo: navegador e PDF no Chrome, texto no KWrite.
+for lista in /usr/share/applications/mimeapps.list /usr/share/applications/kde-mimeapps.list \
+             /etc/xdg/mimeapps.list /usr/share/kde-settings/kde-profile/default/xdg/kde-mimeapps.list; do
+  [ -f "$lista" ] || continue
+  sed -i -e 's/org\.mozilla\.firefox\.desktop/com.google.Chrome.desktop/g' \
+         -e '/^application\/pdf=/s/org\.kde\.okular\.desktop/com.google.Chrome.desktop/' \
+         -e 's/org\.kde\.okular[A-Za-z_.]*\.desktop;\?//g' \
+         -e 's/org\.kde\.kate\.desktop;\?//g' \
+         -e 's/org\.kde\.kdeconnect[A-Za-z_.]*\.desktop;\?//g' \
+         -e '/^[^=[]*=$/d' "$lista"
+done
+# Favoritos do menu de apps do Plasma.
+favoritos=/usr/share/kde-settings/kde-profile/default/xdg/kicker-extra-favoritesrc
+[ -f "$favoritos" ] && sed -i -e 's/net\.lutris\.Lutris\.desktop;//' -e 's/io\.github\.ublue_os\.yafti_gtk\.desktop;//' "$favoritos"
 
 passo "Limpeza: apps em Flatpak"
 # Os Flatpaks não ficam dentro da imagem: são instalados na máquina. Este serviço
@@ -95,7 +126,9 @@ rm -f /etc/xdg/autostart/pam_kwallet_init.desktop
 passo "Tema aplicado no login de cada usuário"
 install -m 755 "$AQUI/primeiro-uso.sh" /usr/libexec/bmtheme-primeiro-uso
 install -m 644 "$AQUI/bmtheme-primeiro-uso.desktop" /etc/xdg/autostart/bmtheme-primeiro-uso.desktop
-chmod 755 "$TEMA/instalar.sh" "$TEMA/desinstalar.sh" "$TEMA/bin/bmos-tema"
+chmod 755 "$TEMA/instalar.sh" "$TEMA/desinstalar.sh" "$TEMA"/bin/*
+# Restos dos apps removidos na pasta pessoal: cada usuário apaga os seus, vendo a lista.
+install -m 755 "$AQUI/limpar-restos" /usr/bin/bmos-limpar-restos
 
 passo "Faxina da construção"
 dnf5 clean all >/dev/null 2>&1 || true

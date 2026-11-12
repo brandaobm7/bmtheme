@@ -143,13 +143,17 @@ Window {
         ]
     })
 
-    // "se" de um grupo ou linha: a chave precisa ter valor. Com "!" na frente, precisa não ter.
+    // "se" de um grupo ou linha: a chave precisa ter valor. Com "!" na frente, precisa
+    // não ter, e só depois que a página foi lida: antes disso ainda não se sabe, e a
+    // tela não pode dizer que o computador não tem a placa.
     function vale(se) {
         if (se === undefined)
             return true
         const negado = se.charAt(0) === "!"
         const valor = v[negado ? se.slice(1) : se]
-        const tem = valor !== undefined && valor !== false && valor !== ""
+        if (valor === undefined)
+            return false
+        const tem = valor !== false && valor !== ""
         return negado ? !tem : tem
     }
     function mostrar(valor) {

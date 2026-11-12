@@ -24,3 +24,7 @@ firewall-config
 btrfs-assistant
 lutris
 rom-properties*
+# Peças da carteira de senhas que nenhum outro pacote exige: a abertura da
+# carteira no login e a ligação dela com as contas online.
+pam-kwallet
+signon-kwallet-extension

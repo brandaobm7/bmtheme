@@ -1,0 +1,24 @@
+# Nomes dos apps removidos, como aparecem em arquivos e pastas do sistema.
+# Um por linha, em expressão regular estendida, sem diferença entre maiúsculas e
+# minúsculas, comparada com o nome do arquivo ou da pasta (não com o caminho).
+# restos.sh apaga os achados que não são de pacote nenhum e relata os outros.
+waydroid
+lutris
+sunshine
+lizardbyte
+input-remapper
+inputremapper
+kde-?connect
+krfb
+kwalletmanager
+webapp-manager
+\bkate\b
+kfind
+khelpcenter
+kdebugsettings
+kjournald
+firewall-config
+btrfs-assistant
+rom-properties
+gerbilsoft
+fcitx

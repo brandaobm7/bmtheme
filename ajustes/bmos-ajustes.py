@@ -21,9 +21,13 @@ from ajustes import Ajustes     # noqa: E402
 
 def principal():
     livres = [a for a in sys.argv[1:] if not a.startswith("-")]
-    return abrir_janela("org.bmos.ajustes", "Ajustes", "preferences-system",
-                        os.path.join(AQUI, "Ajustes.qml"),
-                        lambda sistema: {"ajustes": Ajustes(), "paginaInicial": livres[0] if livres else ""})
+
+    def contexto(sistema):
+        ajustes = Ajustes()
+        ajustes.vigiar()
+        return {"ajustes": ajustes, "paginaInicial": livres[0] if livres else ""}
+
+    return abrir_janela("org.bmos.ajustes", "Ajustes", "preferences-system", os.path.join(AQUI, "Ajustes.qml"), contexto)
 
 
 if __name__ == "__main__":

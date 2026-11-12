@@ -72,9 +72,9 @@ dock.floating = true;
 dock.hiding = "none";
 var tarefas = dock.addWidget("org.kde.plasma.icontasks");
 tarefas.currentConfigGroup = ["General"];
-if (fixados) {
-    tarefas.writeConfig("launchers", fixados);
-}
+// O primeiro ícone da dock abre a grade de todos os apps.
+fixados = "applications:org.bmos.grade.desktop" + (fixados ? "," + fixados : "");
+tarefas.writeConfig("launchers", fixados);
 tarefas.writeConfig("fill", false);
 // O Plasma faz cada ícone ocupar um quadrado da altura da dock, mais os recuos dos
 // lados vezes este número. Negativo, ele estreita o quadrado, e os ícones ficam
