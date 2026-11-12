@@ -34,6 +34,9 @@ MODOS = {
             "link.color": "#5463df", "link.visited.color": "#7a4fc9", "progress.indicator.text.color": "#ffffff",
         },
         "cartao": "#ffffff",
+        # Contorno e sombra do menu, como no Arquivos: uma linha fina na cor do texto
+        # e uma sombra bem leve. (cor da linha, opacidade da linha, opacidade da sombra)
+        "contorno": ("#1f1d2b", "0.12", "0.13"),
     },
     "bmos-escuro": {
         "origem": "MacTahoeDark",
@@ -52,6 +55,7 @@ MODOS = {
             "link.color": "#8f9bff", "link.visited.color": "#b79bff", "progress.indicator.text.color": "#ffffff",
         },
         "cartao": "#2f2c4b",
+        "contorno": ("#f2f0fa", "0.16", "0.2"),
     },
 }
 
@@ -125,6 +129,48 @@ def menu_opaco(svg, cartao):
     return re.sub(r'(<(?:path|rect)\b[^>]*?\bstyle=")([^"]*)(")', trocar, svg, flags=re.S)
 
 
+def fim_do_grupo(svg, inicio):
+    """Onde termina o grupo que começa em `inicio`, contando os grupos de dentro."""
+    fundo = 0
+    for marca in re.finditer(r"<g\b[^>]*>|</g>", svg[inicio:], re.S):
+        if marca.group(0) == "</g>":
+            fundo -= 1
+        elif not marca.group(0).endswith("/>"):
+            fundo += 1
+        if fundo == 0:
+            return inicio + marca.end()
+    return len(svg)
+
+
+def sombra_do_menu(svg, contorno):
+    """Suaviza a sombra e o contorno do menu, que no tema de origem são fortes."""
+    cor, linha, sombra = contorno
+
+    def trocar(achado):
+        estilo = dict(parte.split(":", 1) for parte in achado.group(2).split(";") if ":" in parte)
+        preenchimento = estilo.get("fill", "").lower()
+        if preenchimento.startswith("url("):                    # a sombra é um degradê
+            estilo["opacity"] = sombra
+        elif preenchimento == "#000000" and "opacity" in estilo:  # a linha do contorno
+            estilo["fill"], estilo["opacity"] = cor, linha
+        elif preenchimento == "#ffffff" and estilo.get("opacity") == "0.1":
+            # Um segundo fio, de brilho, por dentro do contorno: junto com ele, engrossa a borda.
+            estilo["opacity"] = "0"
+        else:
+            return achado.group(0)
+        return achado.group(1) + ";".join(f"{chave}:{valor}" for chave, valor in estilo.items()) + achado.group(3)
+
+    # As outras peças da moldura são cópias giradas destas duas.
+    for ident in ("menu-shadow-top", "menu-shadow-topright"):
+        achado = re.search(r'<g\b[^>]*\bid="%s"' % ident, svg, re.S)
+        if not achado:
+            continue
+        ini, fim = achado.start(), fim_do_grupo(svg, achado.start())
+        bloco = re.sub(r'(<(?:path|rect|g)\b[^>]*?\bstyle=")([^"]*)(")', trocar, svg[ini:fim], flags=re.S)
+        svg = svg[:ini] + bloco + svg[fim:]
+    return svg
+
+
 def ajustar(config, cores):
     """Aplica as cores gerais e os AJUSTES ao arquivo de configuração do tema."""
     trocas = dict(AJUSTES)
@@ -176,6 +222,7 @@ def montar(origem, destino):
             # que parece defeito. Sem a peça, o botão padrão fica igual aos outros.
             svg = svg.replace('id="button-default-indicator"', 'id="sem-uso-button-default-indicator"')
         svg = recolorir(svg, modo["cinzas"])
+        svg = sombra_do_menu(svg, modo["contorno"])
         config = ajustar(recolorir(config, modo["cinzas"]), modo["cores"])
         config = config.replace("author=Vince Liuice", "author=bmos, a partir do MacTahoe de Vince Liuice", 1)
         pasta = os.path.join(destino, nome)
