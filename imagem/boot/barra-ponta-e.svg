@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3" height="6" viewBox="0 0 3 6">
+  <defs>
+    <linearGradient id="destaque" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7f8ff8"/>
+      <stop offset="1" stop-color="#5a66e0"/>
+    </linearGradient>
+  </defs>
+  <path d="M3 0 A3 3 0 0 0 3 6 Z" fill="url(#destaque)"/>
+</svg>

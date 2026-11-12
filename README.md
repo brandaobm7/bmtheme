@@ -67,13 +67,22 @@ O que muda em relação ao Bazzite:
 
 - O tema bmos é aplicado sozinho no primeiro login de cada usuário, sem baixar nada.
 - Saem os apps e serviços que não servem a um computador de jogos com área de trabalho simples. A lista está em [imagem/remover.txt](imagem/remover.txt).
+- Os menus e controles dos apps do KDE, a tela de bloqueio, a tela de login e a tela de boot ganham o desenho do bmos.
 - No primeiro boot, entram o Google Chrome e o OnlyOffice, e saem o Firefox e os outros de [imagem/flatpaks-sair.txt](imagem/flatpaks-sair.txt). Os dados desses apps na pasta pessoal não são apagados.
 
-Por enquanto existe só a imagem para placas NVIDIA. Trocar um Bazzite já instalado para ela:
+Há uma imagem para cada tipo de placa de vídeo. Escolha a da sua e troque um Bazzite já instalado para ela:
+
+| Placa de vídeo | Imagem |
+|----------------|--------|
+| AMD ou Intel | `bmtheme` |
+| NVIDIA GTX das séries 900 e 1000 | `bmtheme-nvidia` |
+| NVIDIA RTX ou GTX 1600 | `bmtheme-nvidia-open` |
 
 ```bash
-sudo rpm-ostree rebase ostree-unverified-registry:ghcr.io/brandaobm7/bmtheme-nvidia:latest
+sudo rpm-ostree rebase ostree-unverified-registry:ghcr.io/brandaobm7/bmtheme:latest
 ```
+
+Troque `bmtheme` pelo nome da imagem da sua placa.
 
 Depois, reinicie. Seus arquivos, jogos e apps continuam como estão. O sistema anterior fica guardado: para voltar a ele, escolha a segunda entrada no menu de boot, ou rode:
 
@@ -84,8 +93,10 @@ sudo rpm-ostree rollback
 Para voltar de vez ao Bazzite original:
 
 ```bash
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/ublue-os/bazzite-nvidia:stable
+sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/ublue-os/bazzite:stable
 ```
+
+Use `bazzite-nvidia` ou `bazzite-nvidia-open` no lugar de `bazzite`, conforme a sua placa.
 
 ## O que fica fora do tema
 

@@ -1,0 +1,90 @@
+// Tela de carregamento do bmos: o mesmo fundo do instalador, o logo no centro
+// e uma barra de progresso fina embaixo dele.
+
+Window.SetBackgroundTopColor(0.80, 0.85, 0.97);
+Window.SetBackgroundBottomColor(0.95, 0.85, 0.91);
+
+largura = Window.GetWidth();
+altura = Window.GetHeight();
+
+// Fundo cobrindo a tela inteira, sem distorcer.
+fundo = Image("fundo.png");
+escala = Math.Max(largura / fundo.GetWidth(), altura / fundo.GetHeight());
+fundo = fundo.Scale(Math.Int(fundo.GetWidth() * escala) + 1, Math.Int(fundo.GetHeight() * escala) + 1);
+fundo.sprite = Sprite(fundo);
+fundo.sprite.SetPosition(Math.Int((largura - fundo.GetWidth()) / 2), Math.Int((altura - fundo.GetHeight()) / 2), -10);
+
+logo = Image("logo.png");
+logo.sprite = Sprite(logo);
+logo.sprite.SetPosition(Math.Int(largura / 2 - logo.GetWidth() / 2), Math.Int(altura / 2 - logo.GetHeight() / 2 - 20), 10);
+
+// Barra: um trilho claro e, por cima, o trecho preenchido, feito de três peças
+// (ponta esquerda, miolo esticado e ponta direita) para as pontas ficarem redondas.
+trilho = Image("barra-trilho.png");
+ponta_e = Image("barra-ponta-e.png");
+ponta_d = Image("barra-ponta-d.png");
+miolo = Image("barra-miolo.png");
+
+barra_x = Math.Int(largura / 2 - trilho.GetWidth() / 2);
+barra_y = Math.Int(altura / 2 + logo.GetHeight() / 2 + 24);
+miolo_x = barra_x + ponta_e.GetWidth();
+miolo_maximo = trilho.GetWidth() - ponta_e.GetWidth() - ponta_d.GetWidth();
+
+trilho.sprite = Sprite(trilho);
+trilho.sprite.SetPosition(barra_x, barra_y, 10);
+esquerda = Sprite(ponta_e);
+esquerda.SetPosition(barra_x, barra_y, 11);
+esquerda.SetOpacity(0);
+centro = Sprite();
+centro.SetPosition(miolo_x, barra_y, 11);
+direita = Sprite(ponta_d);
+direita.SetPosition(miolo_x, barra_y, 11);
+direita.SetOpacity(0);
+
+// O progresso vem de duas fontes, e vale a maior: a estimativa do Plymouth, que usa a
+// duração da última inicialização, e um avanço lento pelo tempo, para a barra nunca
+// parecer parada (na primeira inicialização e ao desligar, não há estimativa).
+estimado = 0;
+pelo_tempo = 0;
+mostrado = 0;
+desenhado = -1;
+ritmo = 0.004;
+if (Plymouth.GetMode() != "boot")
+  ritmo = 0.03;
+
+fun desenhar() {
+  tamanho = Math.Int(mostrado * miolo_maximo);
+  if (tamanho != desenhado) {
+    desenhado = tamanho;
+    if (tamanho < 1) {
+      centro.SetOpacity(0);
+    } else {
+      centro.SetImage(miolo.Scale(tamanho, miolo.GetHeight()));
+      centro.SetOpacity(1);
+      esquerda.SetOpacity(1);
+      direita.SetOpacity(1);
+    }
+    direita.SetPosition(miolo_x + tamanho, barra_y, 11);
+  }
+}
+
+fun progresso(duracao, fracao) {
+  estimado = fracao;
+}
+
+fun atualizar() {
+  pelo_tempo = pelo_tempo + (0.9 - pelo_tempo) * ritmo;
+  alvo = Math.Max(estimado, pelo_tempo);
+  mostrado = mostrado + (alvo - mostrado) * 0.1;
+  desenhar();
+}
+
+// Ao terminar, a barra chega ao fim antes de a tela seguinte aparecer.
+fun sair() {
+  mostrado = 1;
+  desenhar();
+}
+
+Plymouth.SetBootProgressFunction(progresso);
+Plymouth.SetRefreshFunction(atualizar);
+Plymouth.SetQuitFunction(sair);

@@ -2,8 +2,9 @@
 # a um computador de jogos com área de trabalho simples.
 #
 # BASE escolhe a imagem do Bazzite de partida, conforme a placa de vídeo:
-#   ghcr.io/ublue-os/bazzite:stable          AMD e Intel
-#   ghcr.io/ublue-os/bazzite-nvidia:stable   NVIDIA
+#   ghcr.io/ublue-os/bazzite:stable               AMD e Intel
+#   ghcr.io/ublue-os/bazzite-nvidia:stable        NVIDIA GTX das séries 900 e 1000
+#   ghcr.io/ublue-os/bazzite-nvidia-open:stable   NVIDIA RTX e GTX 1600
 ARG BASE=ghcr.io/ublue-os/bazzite:stable
 FROM ${BASE}
 

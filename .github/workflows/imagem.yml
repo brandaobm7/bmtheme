@@ -25,9 +25,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Uma imagem para cada base do Bazzite. Por enquanto, só a do notebook de teste.
+          # Uma imagem para cada base do Bazzite, conforme a placa de vídeo.
+          # AMD e Intel.
+          - base: bazzite
+            nome: bmtheme
+          # NVIDIA GTX das séries 900 e 1000 (driver 580).
           - base: bazzite-nvidia
             nome: bmtheme-nvidia
+          # NVIDIA RTX e GTX 1600 (driver com os módulos abertos).
+          - base: bazzite-nvidia-open
+            nome: bmtheme-nvidia-open
     steps:
       - uses: actions/checkout@v4
 

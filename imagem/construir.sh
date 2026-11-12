@@ -17,6 +17,8 @@ export HOME="$(mktemp -d)"
 passo "Kvantum: o motor que desenha os menus e controles dos apps do KDE"
 # Não vem no Bazzite. Com ele, os menus do sistema ganham o desenho do menu do Arquivos.
 dnf5 -y install kvantum
+# A peça do Plymouth que roda temas feitos em roteiro, como a tela de boot do bmos.
+dnf5 -y install plymouth-plugin-script
 
 passo "Componentes de terceiros no sistema: fonte, ícones, decoração, menus, tema GTK e PySide6"
 bash "$TEMA/instalar.sh" --componentes-do-sistema
@@ -186,6 +188,46 @@ if [ -f /usr/lib/plasmalogin/defaults.conf ]; then
 else
   echo "Aviso: esta versão do Bazzite não usa o Plasma Login Manager. A tela de login fica como vem." >&2
 fi
+
+# ------------------------------------------------------------------ tela de boot
+passo "Tela de boot do bmos"
+# O fundo do bmos, o logo no centro e uma barra fina de progresso (imagem/boot).
+# O Plymouth só lê PNG: as peças em SVG e o papel de parede são convertidos aqui.
+BOOT=/usr/share/plymouth/themes/bmos
+mkdir -p "$BOOT"
+cp "$AQUI/boot/bmos.plymouth" "$AQUI/boot/bmos.script" "$BOOT/"
+for peca in barra-trilho barra-miolo barra-ponta-e barra-ponta-d; do
+  magick -background none "$AQUI/boot/$peca.svg" "$BOOT/$peca.png"
+done
+magick -background none -density 384 "$TEMA/tema-global/comum/splash/images/logo.svg" -resize 128x128 "$BOOT/logo.png"
+magick "$TEMA/papel-de-parede/bmos/contents/images/3840x2400.png" -resize 1920x1200 -strip "$BOOT/fundo.png"
+plymouth-set-default-theme bmos
+
+# A tela de boot aparece antes de o disco ser montado, então o tema precisa estar
+# dentro do initramfs, o pequeno sistema que o kernel carrega primeiro. Ele é
+# refeito aqui, do mesmo jeito que o Bazzite faz. Um initramfs errado impede o
+# computador de ligar: por isso o novo só fica se tiver os mesmos módulos do
+# original, tamanho parecido e o tema do bmos dentro. Senão, a construção para.
+NUCLEO="$(ls /usr/lib/modules | sort -V | tail -1)"
+INICIAL="/usr/lib/modules/$NUCLEO/initramfs.img"
+modulos() { { lsinitrd "$1" 2>/dev/null || true; } | sed -n '/^dracut modules:/,/^=====/p'; }
+modulos "$INICIAL" >"$HOME/modulos-antes"
+tamanho_antes="$(stat -c %s "$INICIAL")"
+DRACUT_NO_XATTR=1 dracut --no-hostonly --kver "$NUCLEO" --reproducible --zstd --add ostree -f "$HOME/initramfs-novo.img"
+modulos "$HOME/initramfs-novo.img" >"$HOME/modulos-depois"
+tamanho_depois="$(stat -c %s "$HOME/initramfs-novo.img")"
+[ -s "$HOME/modulos-antes" ] && cmp -s "$HOME/modulos-antes" "$HOME/modulos-depois" \
+  || { echo "Erro: o initramfs novo não tem os mesmos módulos do original." >&2; diff "$HOME/modulos-antes" "$HOME/modulos-depois" >&2 || true; exit 1; }
+[ "$tamanho_depois" -gt $((tamanho_antes * 90 / 100)) ] && [ "$tamanho_depois" -lt $((tamanho_antes * 110 / 100)) ] \
+  || { echo "Erro: o initramfs novo tem tamanho muito diferente do original ($tamanho_depois contra $tamanho_antes)." >&2; exit 1; }
+# A lista vai para um arquivo antes da busca: buscar direto na saída do lsinitrd
+# encerra a leitura no primeiro achado, e o comando termina com erro.
+lsinitrd "$HOME/initramfs-novo.img" >"$HOME/conteudo-depois" 2>/dev/null || true
+grep -q 'plymouth/themes/bmos/bmos.script' "$HOME/conteudo-depois" \
+  || { echo "Erro: o tema de boot do bmos não entrou no initramfs." >&2; exit 1; }
+install -m 0600 "$HOME/initramfs-novo.img" "$INICIAL"
+rm -f "$HOME/initramfs-novo.img"
+echo "Initramfs refeito para o kernel $NUCLEO: $tamanho_depois bytes (antes, $tamanho_antes)."
 
 passo "Faxina da construção"
 dnf5 clean all >/dev/null 2>&1 || true

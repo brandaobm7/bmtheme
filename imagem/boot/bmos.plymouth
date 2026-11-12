@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=bmos
+Description=Tela de carregamento do bmos
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/bmos
+ScriptFile=/usr/share/plymouth/themes/bmos/bmos.script
