@@ -1,9 +1,9 @@
 #!/bin/sh
 # Roda no login de cada usuário, na imagem bmos. Instala o tema na pasta pessoal
 # a partir de /usr/share/bmtheme, sem baixar nada: na primeira vez, sempre que a
-# imagem trouxer uma versão nova do tema, e uma vez para quem tinha instalado o
+# imagem trouxer qualquer mudança no tema, e uma vez para quem tinha instalado o
 # tema por conta própria antes de trocar para a imagem.
-TEMA=/usr/share/bmtheme
+TEMA="${BMTHEME:-/usr/share/bmtheme}"
 ESTADO="${XDG_DATA_HOME:-$HOME/.local/share}/bmos-tema"
 CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}"
 
@@ -16,8 +16,10 @@ qdbus() { "$QDBUS" "$@"; }
 [ "${XDG_CURRENT_DESKTOP:-}" = "KDE" ] || exit 0
 # Quem desinstalou o tema de propósito fica sem ele.
 [ -f "$CONFIG/bmos/sem-tema" ] && exit 0
-# Em dia com a imagem e já usando os componentes do sistema: nada a fazer.
-if [ "$(cat "$TEMA/VERSAO" 2>/dev/null)" = "$(cat "$ESTADO/instalado" 2>/dev/null)" ] && [ ! -d "$ESTADO/venv" ]; then
+# A assinatura muda quando qualquer arquivo do tema muda na imagem (construir.sh).
+# Em dia com ela e já usando os componentes do sistema: nada a fazer.
+assinatura="$(cat "$TEMA/assinatura" 2>/dev/null || cat "$TEMA/VERSAO" 2>/dev/null)"
+if [ "$assinatura" = "$(cat "$ESTADO/assinatura" 2>/dev/null)" ] && [ ! -d "$ESTADO/venv" ]; then
   exit 0
 fi
 
@@ -31,4 +33,6 @@ sleep 3
 modo="$(cat "$CONFIG/bmos/tema" 2>/dev/null)"
 [ "$modo" = "escuro" ] || modo=claro
 mkdir -p "$HOME/.local/state"
-exec "$TEMA/instalar.sh" "$modo" >"$HOME/.local/state/bmtheme-instalacao.log" 2>&1
+"$TEMA/instalar.sh" "$modo" >"$HOME/.local/state/bmtheme-instalacao.log" 2>&1 || exit 1
+# Só depois de dar certo: se falhar, tenta de novo no próximo login.
+printf '%s\n' "$assinatura" >"$ESTADO/assinatura"

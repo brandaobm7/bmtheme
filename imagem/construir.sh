@@ -127,6 +127,11 @@ passo "Tema aplicado no login de cada usuário"
 install -m 755 "$AQUI/primeiro-uso.sh" /usr/libexec/bmtheme-primeiro-uso
 install -m 644 "$AQUI/bmtheme-primeiro-uso.desktop" /etc/xdg/autostart/bmtheme-primeiro-uso.desktop
 chmod 755 "$TEMA/instalar.sh" "$TEMA/desinstalar.sh" "$TEMA"/bin/*
+# Assinatura do tema: muda quando qualquer arquivo dele muda. É por ela que o
+# login de cada usuário sabe que precisa aplicar o tema de novo. A receita da
+# imagem fica de fora, para uma mudança só nela não reaplicar o tema à toa.
+(cd "$TEMA" && find . -type f ! -path './imagem/*' ! -name assinatura -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16) >"$TEMA/assinatura"
+echo "Assinatura do tema: $(cat "$TEMA/assinatura")"
 # Restos dos apps removidos na pasta pessoal: cada usuário apaga os seus, vendo a lista.
 install -m 755 "$AQUI/limpar-restos" /usr/bin/bmos-limpar-restos
 
