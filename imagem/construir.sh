@@ -23,6 +23,17 @@ dnf5 -y install plymouth-plugin-script
 passo "Componentes de terceiros no sistema: fonte, ícones, decoração, menus, tema GTK e PySide6"
 bash "$TEMA/instalar.sh" --componentes-do-sistema
 
+# O tema de decoração só arredonda os cantos de cima das janelas. O motor dele
+# (Aurorae) chega aqui já compilado de novo, numa etapa à parte da construção
+# (imagem/Containerfile), com poucas trocas para arredondar também os de baixo.
+# Se aquela compilação falhou, chegou o original.
+if grep -q BmosCornerRadius /usr/lib64/qt6/plugins/org.kde.kdecoration3/org.kde.kwin.aurorae.so \
+   && grep -q BmosCornerRadius /usr/lib64/qt6/plugins/org.kde.kdecoration3/org.kde.kwin.aurorae.v2.so; then
+  echo "Decoração das janelas: com os cantos de baixo arredondados."
+else
+  echo "Aviso: a decoração das janelas veio sem os cantos de baixo arredondados." >&2
+fi
+
 # ------------------------------------------------------------------ limpeza
 passo "Limpeza: pacotes"
 sair=()

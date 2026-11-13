@@ -6,6 +6,14 @@
 #   ghcr.io/ublue-os/bazzite-nvidia:stable        NVIDIA GTX das séries 900 e 1000
 #   ghcr.io/ublue-os/bazzite-nvidia-open:stable   NVIDIA RTX e GTX 1600
 ARG BASE=ghcr.io/ublue-os/bazzite:stable
+
+# Etapa de obra, jogada fora no fim: compila o motor da decoração das janelas com
+# os cantos de baixo arredondados. Os pacotes instalados para compilar ficam aqui e
+# não chegam à imagem. Se a compilação falhar, as peças entregues são as originais.
+FROM ${BASE} AS obra
+COPY imagem/cantos-da-decoracao.sh imagem/cantos-da-decoracao.py /obra/
+RUN bash /obra/cantos-da-decoracao.sh /saida
+
 FROM ${BASE}
 
 LABEL org.opencontainers.image.title="bmtheme" \
@@ -16,6 +24,8 @@ LABEL org.opencontainers.image.title="bmtheme" \
 # O tema inteiro fica no sistema. No login de cada usuário, ele é instalado na
 # pasta pessoal a partir daqui (ver imagem/primeiro-uso.sh).
 COPY . /usr/share/bmtheme
+# As duas peças da decoração que a etapa de obra entregou.
+COPY --from=obra /saida/org.kde.kwin.aurorae.so /saida/org.kde.kwin.aurorae.v2.so /usr/lib64/qt6/plugins/org.kde.kdecoration3/
 
 # A última etapa confere se o resultado continua sendo uma imagem de sistema válida.
 RUN bash /usr/share/bmtheme/imagem/construir.sh && bootc container lint

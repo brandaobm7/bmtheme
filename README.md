@@ -67,7 +67,8 @@ O que muda em relação ao Bazzite:
 
 - O tema bmos é aplicado sozinho no primeiro login de cada usuário, sem baixar nada.
 - Saem os apps e serviços que não servem a um computador de jogos com área de trabalho simples. A lista está em [imagem/remover.txt](imagem/remover.txt).
-- Os menus e controles dos apps do KDE e a tela de boot ganham o desenho do bmos. A tela de login e a tela de bloqueio ficam com o desenho do Plasma, iguais uma à outra, com o papel de parede, as cores e a fonte do bmos. A tela de bloqueio ganha uma correção para conta sem senha, que no Plasma 6.8 não destravava depois de voltar da suspensão.
+- Os menus e controles dos apps do KDE e a tela de boot ganham o desenho do bmos.
+- As janelas com barra de título ganham os cantos de baixo arredondados, como os de cima. Para isso a imagem compila de novo o motor da decoração (Aurorae) com uma troca pequena, numa etapa à parte da construção. A tela de login e a tela de bloqueio ficam com o desenho do Plasma, iguais uma à outra, com o papel de parede, as cores e a fonte do bmos. A tela de bloqueio ganha uma correção para conta sem senha, que no Plasma 6.8 não destravava depois de voltar da suspensão.
 - No primeiro boot, entram o Google Chrome e o OnlyOffice, e saem o Firefox e os outros de [imagem/flatpaks-sair.txt](imagem/flatpaks-sair.txt). Os dados desses apps na pasta pessoal não são apagados.
 
 Há uma imagem para cada tipo de placa de vídeo. Escolha a da sua e troque um Bazzite já instalado para ela:
@@ -100,7 +101,7 @@ Use `bazzite-nvidia` ou `bazzite-nvidia-open` no lugar de `bazzite`, conforme a 
 
 ## O que fica fora do tema
 
-Um tema instalado na pasta pessoal não alcança algumas partes do sistema: a tela de boot, a tela de login e o formato dos menus dos outros apps.
+Um tema instalado na pasta pessoal não alcança algumas partes do sistema: a tela de boot, a tela de login, o formato dos menus dos outros apps e os cantos de baixo arredondados das janelas.
 
 ## Componentes de terceiros
 

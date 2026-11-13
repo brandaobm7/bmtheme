@@ -67,6 +67,8 @@ print("barra de título %s: com foco %s, sem foco %s | %s | cópia pessoal: %s" 
     "EXISTE" if os.path.exists(pessoal) else "não há"))
 PY
 done
+echo "cantos das janelas: raio no tema $(grep -h "^BmosCornerRadius=" /usr/share/aurorae/themes/MacTahoe-Dark/*rc /usr/share/aurorae/themes/MacTahoe-Light/*rc | tr "\n" " ")| motor da decoração com a troca: $(for p in org.kde.kwin.aurorae.so org.kde.kwin.aurorae.v2.so; do grep -c BmosCornerRadius /usr/lib64/qt6/plugins/org.kde.kdecoration3/$p; done | grep -c "^[1-9]") de 2 | pacotes de compilação na imagem: $(rpm -qa "cmake" "extra-cmake-modules" "kdecoration-devel" "qt6-qtbase-devel" | wc -l) de 0"
+echo "sombra das janelas: $(grep -o "stop-color:#[0-9a-f]*" /usr/share/aurorae/themes/MacTahoe-Dark/decoration.svg | sort | uniq -c | tr "\n" " ")(deve ser só #292159)"
 echo "logo da abertura da sessão: $(readlink ~/.local/share/plasma/look-and-feel/org.bmos.claro/contents/splash/images/logo.svg)"
 for tema in /usr/share/themes/MacTahoe-Dark ~/.local/share/themes/MacTahoe-Dark; do
   python3 - "$tema/gtk-3.0/gtk.css" <<'PY'

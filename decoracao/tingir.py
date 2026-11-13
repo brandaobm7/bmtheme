@@ -8,6 +8,11 @@ Este roteiro pinta a barra com a cor de cabeçalho do esquema de cores do bmos
 sobram (bordas e botões da janela sem foco) o tom da paleta, com a mesma
 tabela dos menus (kvantum/montar.py).
 
+A sombra em volta da janela também muda: a do MacTahoe é preta e forte, e a
+das janelas do bmos (Arquivos e Ajustes) é violeta e leve. Ela passa a ter a
+mesma cor e a mesma força da do Arquivos, medidas com as duas janelas sobre
+um fundo branco.
+
 Uso: tingir.py PASTA_DOS_TEMAS    (a pasta onde estão MacTahoe-Light e MacTahoe-Dark)
 """
 
@@ -58,6 +63,42 @@ def pintar_barra(svg, trocas):
     return re.sub(r'style="([^"]*)"', trocar, svg)
 
 
+# Sombra da janela, igual à do Arquivos (arquivos/Arquivos.qml): a cor e, para cada
+# lado, a opacidade da peça. Os degradês do MacTahoe continuam dando o formato.
+COR_DA_SOMBRA = "#292159"
+# Raio dos cantos de cima da barra de título do MacTahoe, em px, medido no desenho.
+RAIO_DOS_CANTOS = 24
+FORCA_DA_SOMBRA = {
+    "bottom": "0.247", "left": "0.224", "right": "0.224", "top": "0.175",
+    "bottomleft": "0.235", "bottomright": "0.235", "topleft": "0.2", "topright": "0.2",
+}
+
+
+def suavizar_sombra(svg):
+    """Dá à sombra da decoração a cor e a força da sombra das janelas do bmos."""
+    # Os degradês da sombra são os únicos do arquivo, e todos pretos.
+    svg = re.sub(r"<stop\b[^>]*>", lambda achado: achado.group(0).replace("stop-color:#000000", "stop-color:" + COR_DA_SOMBRA), svg)
+    # Cada peça de sombra é um desenho preenchido com um degradê, dentro do grupo do seu lado.
+    grupos = [(achado.start(), achado.group(1)) for achado in
+              re.finditer(r'<g\b[^>]*\bid="decoration-(?:inactive-)?([a-z]+)"', svg)]
+
+    def trocar(achado):
+        estilo = achado.group(1)
+        if "fill:url(#" not in estilo:
+            return achado.group(0)
+        lado = next((nome for inicio, nome in reversed(grupos) if inicio < achado.start()), None)
+        forca = FORCA_DA_SOMBRA.get(lado)
+        if not forca:
+            return achado.group(0)
+        if re.search(r"(?<![-\w])opacity:", estilo):
+            novo = re.sub(r"(?<![-\w])opacity:[0-9.]+", "opacity:" + forca, estilo)
+        else:
+            novo = "opacity:" + forca + ";" + estilo
+        return 'style="' + novo + '"'
+
+    return re.sub(r'style="([^"]*)"', trocar, svg)
+
+
 def tingir(pasta_dos_temas):
     for tema, (modo, esquema, com_foco, sem_foco) in VARIANTES.items():
         pasta = os.path.join(pasta_dos_temas, tema)
@@ -80,11 +121,16 @@ def tingir(pasta_dos_temas):
             novo = texto
             if nome == "decoration.svg":
                 novo = pintar_barra(novo, trocas)
+                novo = suavizar_sombra(novo)
             if nome.endswith(".svg"):
                 novo = recolorir(novo, MODOS[modo]["cinzas"])
                 for provisorio, cor in finais.items():
                     novo = novo.replace(provisorio, cor)
             elif nome.endswith("rc"):
+                # O raio dos cantos da janela, igual ao dos cantos de cima do desenho. Só o
+                # Aurorae da imagem bmos lê esta chave (imagem/cantos-da-decoracao.py).
+                if "BmosCornerRadius" not in novo:
+                    novo = novo.replace("[General]\n", "[General]\nBmosCornerRadius=%d\n" % RAIO_DOS_CANTOS, 1)
                 novo = re.sub(r"(?m)^ActiveTextColor=.*$", "ActiveTextColor=" + cores["[WM]"]["activeForeground"], novo)
                 novo = re.sub(r"(?m)^InactiveTextColor=.*$",
                               "InactiveTextColor=" + cores["[WM]"]["inactiveForeground"], novo)
