@@ -46,12 +46,11 @@ kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key library org.kde.k
 kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key theme "__aurorae__svg__MacTahoe-$variante"
 kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnLeft XIA
 kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnRight ""
-# A tecla Windows (Meta) sozinha abre a grade de todos os apps. O KWin chama o
-# Plasma, que entrega o pedido ao widget da barra pelo mesmo ajuste que o ícone
-# Apps da dock usa. O roteiro não pode ter vírgula: é ela que separa os campos
-# desta opção do KWin. Por isso os argumentos vão espalhados de uma lista.
-kwriteconfig6 --file kwinrc --group ModifierOnlyShortcuts --key Meta \
-  'org.kde.plasmashell,/PlasmaShell,org.kde.PlasmaShell,evaluateScript,var p=panels();for(var i=0;i<p.length;i++){var w=p[i].widgets();for(var j=0;j<w.length;j++){if(w[j].type=="org.bmos.apps"){w[j].currentConfigGroup=["General"];w[j].writeConfig(...["pedidoDaGrade"].concat(String(Date.now())))}}}'
+# A tecla Windows sozinha abre a grade de todos os apps pelo caminho do próprio
+# Plasma 6: o atalho "lançador de aplicativos" ativa o widget que se declara
+# lançador (widgets/org.bmos.appnome). O ajuste antigo do KWin para a tecla, que
+# versões anteriores do tema gravavam aqui, não vale mais e sai.
+kwriteconfig6 --file kwinrc --group ModifierOnlyShortcuts --key Meta --delete
 quieto qdbus org.kde.KWin /KWin org.kde.KWin.reconfigure
 
 # Apps GTK. Os GTK4 não seguem o tema do sistema: leem ~/.config/gtk-4.0.
@@ -61,13 +60,33 @@ origem="$DADOS/themes/MacTahoe-$variante/gtk-4.0"
 [ -d "$origem" ] || origem="/usr/share/themes/MacTahoe-$variante/gtk-4.0"
 if [ -d "$origem" ]; then
   mkdir -p "$CONFIG/gtk-4.0"
-  for item in assets windows-assets gtk.css gtk-dark.css; do
+  for item in assets windows-assets gtk-dark.css; do
     destino="$CONFIG/gtk-4.0/$item"
     # Um arquivo de verdade ali é escolha do usuário: fica como está.
     if [ -e "$origem/$item" ] && { [ -L "$destino" ] || [ ! -e "$destino" ]; }; then
       ln -sfn "$origem/$item" "$destino"
     fi
   done
+  # Os apps em GTK4 feitos com a libadwaita (a Loja de Apps, por exemplo) ignoram
+  # o nome do tema e só leem este gtk.css. O Plasma também escreve nele: se o
+  # arquivo não tiver as duas linhas de importação dele, ele as acrescenta, e a
+  # segunda devolve às janelas o formato do Breeze. Por isso as duas linhas ficam
+  # aqui dentro de um comentário, e o que vale é a importação do tema do bmos.
+  # Um gtk.css que não seja nosso nem só do Plasma é escolha do usuário e fica.
+  destino="$CONFIG/gtk-4.0/gtk.css"
+  if [ -L "$destino" ] || [ ! -e "$destino" ] || grep -q "gravado por bmos-tema" "$destino" \
+     || ! grep -q -v -E "^[[:space:]]*(@import '[a-z_]+\.css';[[:space:]]*)*$" "$destino"; then
+    rm -f "$destino"
+    cat >"$destino" <<FIM
+/* Tema bmos para os apps em GTK4, gravado por bmos-tema.
+   O Plasma acrescentaria as duas linhas abaixo se não as achasse neste arquivo.
+   Ficam em comentário: o tema já traz as cores e o formato das janelas.
+   @import 'colors.css';
+   @import 'kde_window_geometry.css';
+*/
+@import url("file://$origem/gtk.css");
+FIM
+  fi
 fi
 
 # Menus, botões e campos dos apps do KDE, pelo Kvantum, onde ele está instalado

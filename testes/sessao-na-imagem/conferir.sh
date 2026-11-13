@@ -51,7 +51,10 @@ echo "erros na tela de login: $(cat /saida/login.log /saida/login-papel.log | gr
 echo "== tela de boot"
 echo "tema de boot: $(plymouth-set-default-theme 2>/dev/null) | peças: $(ls /usr/share/plymouth/themes/bmos/*.png 2>/dev/null | wc -l) de 6"
 echo "== ajustes visuais"
-echo "tecla Windows: $(kreadconfig6 --file kwinrc --group ModifierOnlyShortcuts --key Meta | cut -c1-70)..."
+echo "tecla Windows: widget que se declara lançador: $(grep -l "org.kde.plasma.launchermenu" ~/.local/share/plasma/plasmoids/*/metadata.json | xargs -n1 dirname | xargs -n1 basename | tr "\n" " ")| ajuste antigo do KWin: $(grep -c "^Meta=" ~/.config/kwinrc) (deve ser 0)"
+busctl --user call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell activateLauncherMenu >/dev/null 2>&1; sleep 2; timeout 20 spectacle -b -n -f -o /saida/4h-tecla-windows.png >/dev/null 2>&1
+busctl --user call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell activateLauncherMenu >/dev/null 2>&1; sleep 1
+echo "apps em GTK4 (Loja de Apps): $(grep -c "gravado por bmos-tema" ~/.config/gtk-4.0/gtk.css) de 1 | importa: $(grep -o "themes/MacTahoe-[A-Za-z]*/gtk-4.0/gtk.css" ~/.config/gtk-4.0/gtk.css) | o arquivo importado existe: $(ls $(grep -o "file://[^\"]*" ~/.config/gtk-4.0/gtk.css | sed "s#file://##") 2>/dev/null | wc -l) de 1"
 echo "sombra só na busca: $(cat ~/.local/share/plasma/desktoptheme/bmos-claro/dialogs/background.svg ~/.local/share/plasma/desktoptheme/bmos-escuro/dialogs/background.svg | grep -c 'id="shadow-') peças de sombra no estilo dos popups (deve ser 0) | janela da sombra: $(ls ~/.local/share/plasma/plasmoids/org.bmos.apps/contents/ui/SombraDaBusca.qml 2>/dev/null | wc -l) de 1"
 for tema in Light Dark; do
   python3 - /usr/share/aurorae/themes/MacTahoe-$tema ~/.local/share/aurorae/themes/MacTahoe-$tema <<'PY'

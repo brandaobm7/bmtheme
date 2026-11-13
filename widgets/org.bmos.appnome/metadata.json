@@ -14,5 +14,8 @@
         "Name": "App aberto do bmos",
         "Version": "0.1"
     },
-    "X-Plasma-API-Minimum-Version": "6.0"
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-Provides": [
+        "org.kde.plasma.launchermenu"
+    ]
 }
