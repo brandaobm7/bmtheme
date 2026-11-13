@@ -78,6 +78,8 @@ fixados = "applications:org.bmos.grade.desktop" + (fixados ? "," + fixados : "")
 if (typeof modoJogo !== "undefined" && modoJogo && fixados.indexOf("org.bmos.modojogo.desktop") < 0) {
     fixados += ",applications:org.bmos.modojogo.desktop";
 }
+// O último ícone é a Lixeira.
+fixados += ",applications:org.bmos.lixeira.desktop";
 tarefas.writeConfig("launchers", fixados);
 tarefas.writeConfig("fill", false);
 // O Plasma faz cada ícone ocupar um quadrado da altura da dock, mais os recuos dos

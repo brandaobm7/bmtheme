@@ -96,6 +96,9 @@ quieto fc-cache -f "$DADOS/fonts"
 # Os apps voltam a ter o nome original.
 [ -x "$HOME/.local/bin/bmos-nomes" ] && quieto "$HOME/.local/bin/bmos-nomes" --desfazer
 rm -f "$HOME/.local/bin/bmos-nomes" "$CONFIG/autostart/org.bmos.nomes.desktop"
+# O ícone da Lixeira e o vigia dele.
+quieto pkill -u "$(id -u)" -f "bmos-lixeira --vigiar"
+rm -f "$HOME/.local/bin/bmos-lixeira" "$DADOS/applications/org.bmos.lixeira.desktop" "$CONFIG/autostart/org.bmos.lixeira.desktop"
 
 # Aqui ficam também os apps Arquivos e Ajustes e o ambiente Python com o PySide6.
 rm -rf "$ESTADO"

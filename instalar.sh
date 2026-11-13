@@ -150,6 +150,30 @@ Terminal=false
 NoDisplay=true
 StartupNotify=false
 FIM
+# Ícone "Lixeira", o último da dock: abre a Lixeira no Arquivos. O ícone troca
+# entre vazia e cheia por um vigia que começa junto com a sessão (bin/bmos-lixeira).
+install -m 755 "$AQUI/bin/bmos-lixeira" "$HOME/.local/bin/bmos-lixeira"
+cat >"$DADOS/applications/org.bmos.lixeira.desktop" <<FIM
+[Desktop Entry]
+Type=Application
+Name=Lixeira
+Comment=Arquivos apagados
+Exec=$HOME/.local/bin/bmos-lixeira
+Icon=user-trash
+Terminal=false
+NoDisplay=true
+StartupNotify=false
+FIM
+"$HOME/.local/bin/bmos-lixeira" --atualizar
+mkdir -p "$CONFIG/autostart"
+cat >"$CONFIG/autostart/org.bmos.lixeira.desktop" <<FIM
+[Desktop Entry]
+Type=Application
+Name=Ícone da Lixeira do bmos
+Exec=$HOME/.local/bin/bmos-lixeira --vigiar
+OnlyShowIn=KDE;
+NoDisplay=true
+FIM
 
 passo "Estilo dos painéis e widgets da barra"
 mkdir -p "$DADOS/plasma/desktoptheme" "$DADOS/plasma/plasmoids"
@@ -467,6 +491,7 @@ $(cat "$AQUI/paineis/montar.js")" 2>/dev/null) \
      && [ -n "$barra" ] && [ "$barra" -gt 0 ] 2>/dev/null; then
     date +%s >"$ESTADO/paineis"
     : >"$ESTADO/apps-na-dock"
+    : >"$ESTADO/lixeira-na-dock"
     # Popups da barra soltos dela, com os quatro cantos redondos. O roteiro dos painéis
     # não alcança esse ajuste: ele fica no arquivo de configuração e vale ao reiniciar.
     kwriteconfig6 --file plasmashellrc --group PlasmaViews --group "Panel $barra" --key floatingApplets 1
@@ -483,6 +508,16 @@ else
     qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "$(cat "$AQUI/paineis/apps-na-dock.js")" >/dev/null 2>&1 \
       && : >"$ESTADO/apps-na-dock"
   fi
+  # O mesmo para o ícone "Lixeira", que entra no fim da dock.
+  if [ ! -f "$ESTADO/lixeira-na-dock" ]; then
+    qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "$(cat "$AQUI/paineis/lixeira-na-dock.js")" >/dev/null 2>&1 \
+      && : >"$ESTADO/lixeira-na-dock"
+  fi
+fi
+# O vigia do ícone da Lixeira começa já, sem esperar o próximo login. Se já
+# houver um rodando, este sai sozinho.
+if [ -z "$SO_COMPONENTES" ]; then
+  setsid "$HOME/.local/bin/bmos-lixeira" --vigiar >/dev/null 2>&1 &
 fi
 
 # ------------------------------------------------------------------ busca no Alt+Espaço

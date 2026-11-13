@@ -86,6 +86,13 @@ echo "Chrome no tema do sistema: $(cat ~/.var/app/com.google.Chrome/config/googl
 cp /usr/share/plymouth/themes/bmos/logo.png /saida/boot-logo.png 2>/dev/null
 echo "== modo jogo (só na imagem de base deck)"
 echo "sessões: $(ls /usr/share/wayland-sessions | tr "\n" " ")| app Modo Jogo: $(ls /usr/share/applications/org.bmos.modojogo.desktop 2>/dev/null | wc -l) | comando de volta: $(ls /usr/bin/return-to-gamemode 2>/dev/null | wc -l) | entrada automática: $(grep -h "^Session=" /usr/lib/sddm/sddm.conf.d/*.conf /etc/sddm.conf.d/*.conf 2>/dev/null | tr "\n" " ")| na dock: $(grep -c "org.bmos.modojogo" ~/.config/plasma-org.kde.plasma.desktop-appletsrc)"
+echo "== lixeira na dock"
+echo "último fixado: $(grep "^launchers=" ~/.config/plasma-org.kde.plasma.desktop-appletsrc | sed "s/.*,//") | ícone: $(sed -n "s/^Icon=//p" ~/.local/share/applications/org.bmos.lixeira.desktop | sed "s#.*/icons/##") | vigia rodando: $(pgrep -c -f "^/bin/bash .*/bmos-lixeira --vigiar")"
+echo teste > ~/arquivo-de-teste.txt; gio trash ~/arquivo-de-teste.txt; sleep 4
+echo "com um arquivo na lixeira: $(sed -n "s/^Icon=//p" ~/.local/share/applications/org.bmos.lixeira.desktop | sed "s#.*/##")"
+timeout 20 spectacle -b -n -f -o /saida/4i-lixeira-cheia.png >/dev/null 2>&1
+rm -rf ~/.local/share/Trash/files/arquivo-de-teste.txt ~/.local/share/Trash/info/arquivo-de-teste.txt.trashinfo; sleep 4
+echo "depois de esvaziar: $(sed -n "s/^Icon=//p" ~/.local/share/applications/org.bmos.lixeira.desktop | sed "s#.*/##")"
 echo "== grade de apps pelo ícone da dock"
 ~/.local/bin/bmos-apps; sleep 2; timeout 20 spectacle -b -n -f -o /saida/4b-grade.png >/dev/null 2>&1
 ~/.local/bin/bmos-apps; sleep 1

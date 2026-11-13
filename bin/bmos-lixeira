@@ -1,0 +1,66 @@
+#!/bin/bash
+# Lixeira da dock do bmos.
+#   bmos-lixeira            abre a Lixeira no Arquivos (é o que o ícone da dock chama)
+#   bmos-lixeira --vigiar   fica de olho na Lixeira e troca o ícone da dock entre
+#                           vazia e cheia; é iniciado junto com a sessão
+DADOS="${XDG_DATA_HOME:-$HOME/.local/share}"
+LIXO="$DADOS/Trash/files"
+ATALHO="$DADOS/applications/org.bmos.lixeira.desktop"
+
+# Põe no atalho o ícone do estado de agora. Só grava quando muda: a dock relê o
+# atalho a cada gravação.
+atualizar() {
+  local novo=user-trash atual pasta
+  [ -n "$(ls -A "$LIXO" 2>/dev/null | head -n 1)" ] && novo=user-trash-full
+  # O desenho claro da lixeira, de vidro branco, aparece bem na dock nos dois
+  # modos; o do tema de ícones escuro some no fundo escuro. Por isso o atalho
+  # aponta para o arquivo do desenho claro, na pasta pessoal ou no sistema.
+  for pasta in "$DADOS/icons/MacTahoe" /usr/share/icons/MacTahoe; do
+    if [ -f "$pasta/places/scalable/$novo.svg" ]; then
+      novo="$pasta/places/scalable/$novo.svg"
+      break
+    fi
+  done
+  atual="$(sed -n 's/^Icon=//p' "$ATALHO" 2>/dev/null)"
+  if [ -f "$ATALHO" ] && [ "$novo" != "$atual" ]; then
+    sed -i "s#^Icon=.*#Icon=$novo#" "$ATALHO"
+    # A dock lê o ícone do cadastro de apps do KDE, que é refeito aqui.
+    command -v kbuildsycoca6 >/dev/null && kbuildsycoca6 >/dev/null 2>&1
+  fi
+  return 0
+}
+
+case "${1:-}" in
+  --atualizar)
+    atualizar
+    ;;
+  --vigiar)
+    # Um vigia só por sessão: o segundo que tentar começar sai na hora.
+    exec 9>"${XDG_RUNTIME_DIR:-/tmp}/bmos-lixeira.trava"
+    flock -n 9 || exit 0
+    # Ao sair, o vigia leva junto o processo que escuta os avisos do sistema.
+    vigia=""
+    trap '[ -n "$vigia" ] && kill "$vigia" 2>/dev/null; exit 0' EXIT TERM INT HUP
+    # O sistema avisa quando algo entra ou sai da Lixeira. De 30 em 30 segundos o
+    # estado é conferido de novo, e a vigia recomeça se a pasta for trocada.
+    while true; do
+      mkdir -p "$LIXO"
+      atualizar
+      exec 3< <(exec gio monitor -d "$LIXO" 2>/dev/null 9>&-)
+      vigia=$!
+      while true; do
+        read -r -t 30 _ <&3
+        fim=$?
+        atualizar
+        # 0: houve aviso. Acima de 128: passaram os 30 segundos. Outro valor: a vigia parou.
+        { [ "$fim" -eq 0 ] || [ "$fim" -gt 128 ]; } && [ -d "$LIXO" ] || break
+      done
+      kill "$vigia" 2>/dev/null
+      exec 3<&-
+      sleep 5
+    done
+    ;;
+  *)
+    exec "$HOME/.local/bin/bmos-arquivos" trash:/
+    ;;
+esac

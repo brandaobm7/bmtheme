@@ -201,7 +201,10 @@ def pastas_do_usuario():
 
 
 def para_caminho(texto):
-    """Aceita caminho ou endereço file:// e devolve o caminho."""
+    """Aceita caminho ou endereço file:// e devolve o caminho. O endereço da
+    lixeira do sistema (trash:/) vira o nome que o app dá a ela."""
+    if texto.startswith("trash:"):
+        return "lixeira:"
     if texto.startswith("file://"):
         return urllib.parse.unquote(urllib.parse.urlparse(texto).path)
     return texto
@@ -358,6 +361,8 @@ class Arquivos(QObject):
     @Slot(str, result=str)
     def resolver(self, texto):
         """Caminho pedido por fora (bmos-controle arquivos CAMINHO): pasta, ou a pasta do arquivo."""
+        if texto and para_caminho(texto) == "lixeira:":
+            return "lixeira:"
         caminho = os.path.normpath(os.path.expanduser(para_caminho(texto))) if texto else CASA
         if os.path.isdir(caminho):
             return caminho

@@ -24,6 +24,7 @@ try:
     itens = a.listar(base, False); nomes = sorted(i["nome"] for i in itens)
     ok("listar", nomes == ["nota.txt", "sub"]); print("     item:", {k: itens[0][k] for k in list(itens[0])[:8]})
     info = a.info(base); ok("info", info.get("existe") and info.get("gravavel")); print("     livre:", info.get("livre"))
+    ok("endereço da lixeira do sistema", a.resolver("trash:/") == "lixeira:")
     nova = a.novaPasta(base); ok("nova pasta", os.path.isdir(nova)); print("    ", os.path.basename(nova))
     ren = a.renomear(os.path.join(base, "nota.txt"), "carta.txt"); ok("renomear", os.path.isfile(os.path.join(base, "carta.txt")))
     a.copiar([os.path.join(base, "carta.txt")], False); esperar(0.3); ok("pode colar", a.podeColar)
