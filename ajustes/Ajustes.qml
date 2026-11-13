@@ -881,6 +881,8 @@ Window {
                 Texto {
                     height: 54
                     text: janela.secao ? janela.secao.nome : ""
+                    // Com a janela sem foco, o título apaga, como o das janelas do sistema.
+                    color: janela.active ? janela.corTexto : janela.corTextoMedio
                     font.pixelSize: 24
                     font.weight: Font.Bold
                 }

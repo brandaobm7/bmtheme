@@ -1040,6 +1040,8 @@ Window {
                 width: Math.max(60, painel.width - janela.lateral - 18 - 76 - ferramentas.width - 36)
                 verticalAlignment: Text.AlignVCenter
                 text: janela.dados.nome
+                // Com a janela sem foco, o título apaga, como o das janelas do sistema.
+                color: janela.active ? janela.corTexto : janela.corTextoMedio
                 font.pixelSize: 17
                 font.weight: Font.DemiBold
             }
