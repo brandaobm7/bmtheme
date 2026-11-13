@@ -54,6 +54,14 @@
 .local/share/webapp-manager
 .config/btrfs-assistant*
 
+# Conexão a outro computador (KRDC) e Bold Brew
+.config/krdcrc
+.local/share/krdc
+.local/state/krdcstaterc
+.cache/krdc
+.config/bbrew
+.cache/bbrew
+
 # Apps em Flatpak que a imagem retira
 flatpak:org.mozilla.firefox
 flatpak:org.kde.okular
