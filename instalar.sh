@@ -462,7 +462,7 @@ if [ ! -f "$ESTADO/paineis" ]; then
     [ -n "$achado" ] || ausentes="$ausentes\"$app\","
   done
   # O roteiro devolve o número da barra superior.
-  if barra=$(qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "var ausentes = [${ausentes%,}];
+  if barra=$(qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "var ausentes = [${ausentes%,}]; var modoJogo = $([ -f "$SISTEMA/applications/org.bmos.modojogo.desktop" ] && echo true || echo false);
 $(cat "$AQUI/paineis/montar.js")" 2>/dev/null) \
      && [ -n "$barra" ] && [ "$barra" -gt 0 ] 2>/dev/null; then
     date +%s >"$ESTADO/paineis"

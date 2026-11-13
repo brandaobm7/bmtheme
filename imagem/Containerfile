@@ -5,6 +5,7 @@
 #   ghcr.io/ublue-os/bazzite:stable               AMD e Intel
 #   ghcr.io/ublue-os/bazzite-nvidia:stable        NVIDIA GTX das séries 900 e 1000
 #   ghcr.io/ublue-os/bazzite-nvidia-open:stable   NVIDIA RTX e GTX 1600
+#   ghcr.io/ublue-os/bazzite-deck:stable          AMD e Intel, ligando no modo jogo da Steam
 ARG BASE=ghcr.io/ublue-os/bazzite:stable
 
 # Etapa de obra, jogada fora no fim: compila o motor da decoração das janelas com

@@ -73,11 +73,14 @@ O que muda em relação ao Bazzite:
 
 Há uma imagem para cada tipo de placa de vídeo. Escolha a da sua e troque um Bazzite já instalado para ela:
 
-| Placa de vídeo | Imagem |
-|----------------|--------|
-| AMD ou Intel | `bmtheme` |
-| NVIDIA GTX das séries 900 e 1000 | `bmtheme-nvidia` |
-| NVIDIA RTX ou GTX 1600 | `bmtheme-nvidia-open` |
+| Placa de vídeo | Liga em | Imagem |
+|----------------|---------|--------|
+| AMD ou Intel | Área de trabalho | `bmtheme` |
+| NVIDIA GTX das séries 900 e 1000 | Área de trabalho | `bmtheme-nvidia` |
+| NVIDIA RTX ou GTX 1600 | Área de trabalho | `bmtheme-nvidia-open` |
+| AMD ou Intel | Modo jogo da Steam, como o Steam Deck | `bmtheme-deck` |
+
+A `bmtheme-deck` é para quem instalou o Bazzite escolhendo "Home Theater PC" ou "Handheld" (a imagem `bazzite-deck`). Ela continua ligando direto no modo jogo; o tema bmos vale na área de trabalho, onde o app "Modo Jogo", na dock e na grade de apps, volta ao modo jogo.
 
 ```bash
 sudo rpm-ostree rebase ostree-unverified-registry:ghcr.io/brandaobm7/bmtheme:latest
@@ -97,7 +100,7 @@ Para voltar de vez ao Bazzite original:
 sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/ublue-os/bazzite:stable
 ```
 
-Use `bazzite-nvidia` ou `bazzite-nvidia-open` no lugar de `bazzite`, conforme a sua placa.
+Use `bazzite-nvidia`, `bazzite-nvidia-open` ou `bazzite-deck` no lugar de `bazzite`, conforme a imagem de onde você veio.
 
 ## O que fica fora do tema
 

@@ -35,6 +35,9 @@ jobs:
           # NVIDIA RTX e GTX 1600 (driver com os módulos abertos).
           - base: bazzite-nvidia-open
             nome: bmtheme-nvidia-open
+          # AMD e Intel, ligando direto no modo jogo da Steam, como o Steam Deck.
+          - base: bazzite-deck
+            nome: bmtheme-deck
     steps:
       - uses: actions/checkout@v4
 

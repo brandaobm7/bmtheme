@@ -74,6 +74,10 @@ var tarefas = dock.addWidget("org.kde.plasma.icontasks");
 tarefas.currentConfigGroup = ["General"];
 // O primeiro ícone da dock abre a grade de todos os apps.
 fixados = "applications:org.bmos.grade.desktop" + (fixados ? "," + fixados : "");
+// Na imagem que liga no modo jogo da Steam, o último ícone volta a ele.
+if (typeof modoJogo !== "undefined" && modoJogo && fixados.indexOf("org.bmos.modojogo.desktop") < 0) {
+    fixados += ",applications:org.bmos.modojogo.desktop";
+}
 tarefas.writeConfig("launchers", fixados);
 tarefas.writeConfig("fill", false);
 // O Plasma faz cada ícone ocupar um quadrado da altura da dock, mais os recuos dos

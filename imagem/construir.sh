@@ -139,6 +139,30 @@ done
 printf '[Wallet]\nEnabled=false\n' >/etc/xdg/kwalletrc
 rm -f /etc/xdg/autostart/pam_kwallet_init.desktop
 
+# ------------------------------------------------------------------ modo jogo
+# Só nas imagens que ligam no modo jogo da Steam (base bazzite-deck). O Bazzite
+# deixa o atalho de volta ao modo jogo só na pasta Área de trabalho de cada
+# usuário. Aqui ele vira um app, "Modo Jogo", que aparece na grade de apps e,
+# para usuário novo, na dock.
+if [ -x /usr/bin/return-to-gamemode ]; then
+  passo "Modo jogo: app para voltar a ele pela área de trabalho"
+  cat >/usr/share/applications/org.bmos.modojogo.desktop <<FIM
+[Desktop Entry]
+Type=Application
+Name=Modo Jogo
+Comment=Volta ao modo jogo da Steam
+Exec=/usr/bin/return-to-gamemode
+Icon=steamdeck-gaming-return
+Terminal=false
+StartupNotify=false
+Categories=Game;
+FIM
+  # O ícone solto que o Bazzite põe na Área de trabalho de usuário novo sai: a
+  # área de trabalho do bmos não tem ícones, e o app acima faz o mesmo papel.
+  rm -f /etc/skel/Desktop/Return.desktop
+  rmdir /etc/skel/Desktop 2>/dev/null || true
+fi
+
 # ------------------------------------------------------------------ ajustes de hardware
 passo "Bluetooth: o adaptador não dorme"
 # Por padrão o adaptador Bluetooth por USB dorme depois de 2 segundos sem uso.

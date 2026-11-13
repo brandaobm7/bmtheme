@@ -84,6 +84,8 @@ PY
 done
 echo "Chrome no tema do sistema: $(cat ~/.var/app/com.google.Chrome/config/google-chrome/Default/Preferences 2>/dev/null)"
 cp /usr/share/plymouth/themes/bmos/logo.png /saida/boot-logo.png 2>/dev/null
+echo "== modo jogo (só na imagem de base deck)"
+echo "sessões: $(ls /usr/share/wayland-sessions | tr "\n" " ")| app Modo Jogo: $(ls /usr/share/applications/org.bmos.modojogo.desktop 2>/dev/null | wc -l) | comando de volta: $(ls /usr/bin/return-to-gamemode 2>/dev/null | wc -l) | entrada automática: $(grep -h "^Session=" /usr/lib/sddm/sddm.conf.d/*.conf /etc/sddm.conf.d/*.conf 2>/dev/null | tr "\n" " ")| na dock: $(grep -c "org.bmos.modojogo" ~/.config/plasma-org.kde.plasma.desktop-appletsrc)"
 echo "== grade de apps pelo ícone da dock"
 ~/.local/bin/bmos-apps; sleep 2; timeout 20 spectacle -b -n -f -o /saida/4b-grade.png >/dev/null 2>&1
 ~/.local/bin/bmos-apps; sleep 1
