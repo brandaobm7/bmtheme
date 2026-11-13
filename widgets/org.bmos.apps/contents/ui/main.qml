@@ -71,4 +71,7 @@ PlasmoidItem {
     Busca {
         id: busca
     }
+    SombraDaBusca {
+        alvo: busca
+    }
 }

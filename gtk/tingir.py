@@ -22,6 +22,10 @@ PASTAS = ("gtk-3.0", "gtk-4.0")
 
 def tingir(pasta_dos_temas):
     for tema, modo in VARIANTES.items():
+        # Tingir duas vezes mudaria as cores de novo: a marca evita.
+        marca = os.path.join(pasta_dos_temas, tema, ".tingido-pelo-bmos")
+        if os.path.exists(marca) or not os.path.isdir(os.path.join(pasta_dos_temas, tema)):
+            continue
         pontos = MODOS[modo]["cinzas"]
         for parte in PASTAS:
             raiz = os.path.join(pasta_dos_temas, tema, parte)
@@ -38,6 +42,7 @@ def tingir(pasta_dos_temas):
                     if novo != texto:
                         with open(caminho, "w", encoding="utf-8", errors="surrogateescape") as arquivo:
                             arquivo.write(novo)
+        open(marca, "w").close()
 
 
 if __name__ == "__main__":

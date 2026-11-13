@@ -52,7 +52,22 @@ echo "== tela de boot"
 echo "tema de boot: $(plymouth-set-default-theme 2>/dev/null) | peças: $(ls /usr/share/plymouth/themes/bmos/*.png 2>/dev/null | wc -l) de 6"
 echo "== ajustes visuais"
 echo "tecla Windows: $(kreadconfig6 --file kwinrc --group ModifierOnlyShortcuts --key Meta | cut -c1-70)..."
-echo "sombra dos popups: $(grep -c 'id="shadow-' ~/.local/share/plasma/desktoptheme/bmos-claro/dialogs/background.svg) peças no claro, $(grep -c 'id="shadow-' ~/.local/share/plasma/desktoptheme/bmos-escuro/dialogs/background.svg) no escuro"
+echo "sombra só na busca: $(cat ~/.local/share/plasma/desktoptheme/bmos-claro/dialogs/background.svg ~/.local/share/plasma/desktoptheme/bmos-escuro/dialogs/background.svg | grep -c 'id="shadow-') peças de sombra no estilo dos popups (deve ser 0) | janela da sombra: $(ls ~/.local/share/plasma/plasmoids/org.bmos.apps/contents/ui/SombraDaBusca.qml 2>/dev/null | wc -l) de 1"
+for tema in Light Dark; do
+  python3 - /usr/share/aurorae/themes/MacTahoe-$tema ~/.local/share/aurorae/themes/MacTahoe-$tema <<'PY'
+import os, re, sys
+pasta, pessoal = sys.argv[1:3]
+svg = open(pasta + "/decoration.svg").read()
+def cor(peca):
+    achado = re.search(r'<path\b[^>]*\bid="%s"[^>]*>' % peca, svg, re.S)
+    return re.search(r"fill:(#[0-9a-f]{6})", achado.group(0)).group(1)
+print("barra de título %s: com foco %s, sem foco %s | %s | cópia pessoal: %s" % (
+    os.path.basename(pasta), cor("decoration-center"), cor("decoration-inactive-center"),
+    "tingida" if os.path.exists(pasta + "/.tingido-pelo-bmos") else "SEM TINGIR",
+    "EXISTE" if os.path.exists(pessoal) else "não há"))
+PY
+done
+echo "logo da abertura da sessão: $(readlink ~/.local/share/plasma/look-and-feel/org.bmos.claro/contents/splash/images/logo.svg)"
 for tema in /usr/share/themes/MacTahoe-Dark ~/.local/share/themes/MacTahoe-Dark; do
   python3 - "$tema/gtk-3.0/gtk.css" <<'PY'
 import re, sys

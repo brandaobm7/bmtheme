@@ -32,6 +32,7 @@ Rectangle {
         width: Math.round(96 * raiz.escala)
         height: width
         source: "images/logo.svg"
+        fillMode: Image.PreserveAspectFit
         sourceSize.width: width * 2
         sourceSize.height: height * 2
     }

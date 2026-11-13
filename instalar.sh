@@ -41,6 +41,7 @@ if [ -n "$SO_COMPONENTES" ]; then
   DADOS="$SISTEMA"
   ESTADO="$TEMP/estado"
 fi
+LOGO_DO_BAZZITE=/usr/share/icons/hicolor/scalable/places/bazzite-logo.svg
 # do_sistema CAMINHO: diz se a imagem já trouxe este componente.
 do_sistema() { [ -z "$SO_COMPONENTES" ] && [ -e "$SISTEMA/$1" ]; }
 
@@ -121,6 +122,11 @@ for pacote in "$AQUI"/tema-global/org.bmos.*; do
   # A tela de abertura é a mesma nos dois temas. Só o fundo muda: um atalho
   # para o papel de parede claro ou escuro, sem guardar a imagem duas vezes.
   cp -r "$AQUI/tema-global/comum/splash" "$destino/contents/splash"
+  # No Bazzite, o logo da abertura é o do próprio sistema, o mesmo que a imagem
+  # põe na tela de boot. Em outro sistema, fica o "b" do bmos.
+  if [ -f "$LOGO_DO_BAZZITE" ]; then
+    ln -sfn "$LOGO_DO_BAZZITE" "$destino/contents/splash/images/logo.svg"
+  fi
   case "$(basename "$pacote")" in
     *escuro) fundo="images_dark" ;;
     *) fundo="images" ;;
@@ -189,19 +195,41 @@ if ! do_sistema icons/MacTahoe && [ "$(versao_instalada icones)" != "$MACTAHOE_I
 fi
 
 # ------------------------------------------------------------------ decoração das janelas
-if ! do_sistema aurorae/themes/MacTahoe-Light && [ "$(versao_instalada decoracao)" != "$MACTAHOE_KDE" ]; then
+# A decoração MacTahoe tem a barra de título cinza no modo escuro e branca no
+# claro. Depois de baixada, a barra e os botões ganham as cores do bmos
+# (decoracao/tingir.py), para não destoarem do resto da janela.
+DECORACAO_VERSAO="$MACTAHOE_KDE-$(cat "$AQUI/decoracao/tingir.py" "$AQUI/kvantum/montar.py" "$AQUI"/cores/*.colors | sha256sum | cut -c1-12)"
+if do_sistema aurorae/themes/MacTahoe-Light/.tingido-pelo-bmos; then
+  # A imagem já traz a decoração tingida. Uma cópia na pasta pessoal, de uma
+  # instalação anterior, valeria mais que a do sistema: ela sai.
+  if [ -n "$(versao_instalada decoracao)" ]; then
+    rm -rf "$DADOS/aurorae/themes/MacTahoe-Light" "$DADOS/aurorae/themes/MacTahoe-Dark"
+    rm -f "$ESTADO/decoracao.versao"
+  fi
+elif [ "$(versao_instalada decoracao)" != "$DECORACAO_VERSAO" ]; then
   passo "Decoração das janelas"
-  baixar_repositorio kde https://github.com/vinceliuice/MacTahoe-kde.git "$MACTAHOE_KDE"
-  for variante in Light Dark; do
-    destino="$DADOS/aurorae/themes/MacTahoe-$variante"
-    rm -rf "$destino"
-    mkdir -p "$destino"
-    cp "$TEMP/kde/aurorae/MacTahoe-$variante"/*.svg "$TEMP/kde/aurorae/icons-$variante"/*.svg "$destino/"
-    cp "$TEMP/kde/aurorae/${variante}rc" "$destino/MacTahoe-${variante}rc"
-    cp "$TEMP/kde/aurorae/metadata.desktop" "$TEMP/kde/aurorae/metadata.json" "$destino/"
-    sed -i "s/theme_name/MacTahoe-$variante/g" "$destino/metadata.desktop" "$destino/metadata.json"
-  done
-  marcar_versao decoracao "$MACTAHOE_KDE"
+  if do_sistema aurorae/themes/MacTahoe-Light; then
+    # Imagem de antes desta mudança, com a decoração ainda cinza: a cópia
+    # tingida fica na pasta pessoal, sem baixar nada.
+    mkdir -p "$DADOS/aurorae/themes"
+    for variante in Light Dark; do
+      rm -rf "$DADOS/aurorae/themes/MacTahoe-$variante"
+      cp -r "$SISTEMA/aurorae/themes/MacTahoe-$variante" "$DADOS/aurorae/themes/"
+    done
+  else
+    baixar_repositorio kde https://github.com/vinceliuice/MacTahoe-kde.git "$MACTAHOE_KDE"
+    for variante in Light Dark; do
+      destino="$DADOS/aurorae/themes/MacTahoe-$variante"
+      rm -rf "$destino"
+      mkdir -p "$destino"
+      cp "$TEMP/kde/aurorae/MacTahoe-$variante"/*.svg "$TEMP/kde/aurorae/icons-$variante"/*.svg "$destino/"
+      cp "$TEMP/kde/aurorae/${variante}rc" "$destino/MacTahoe-${variante}rc"
+      cp "$TEMP/kde/aurorae/metadata.desktop" "$TEMP/kde/aurorae/metadata.json" "$destino/"
+      sed -i "s/theme_name/MacTahoe-$variante/g" "$destino/metadata.desktop" "$destino/metadata.json"
+    done
+  fi
+  python3 "$AQUI/decoracao/tingir.py" "$DADOS/aurorae/themes"
+  marcar_versao decoracao "$DECORACAO_VERSAO"
 fi
 
 # ------------------------------------------------------------------ menus e controles
