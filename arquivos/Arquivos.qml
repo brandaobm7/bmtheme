@@ -1231,8 +1231,10 @@ Window {
                 anchors.topMargin: 4
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
-                cellWidth: Math.floor(width / Math.max(1, Math.floor(width / (janela.tamanho + 62))))
-                cellHeight: janela.tamanho + 62
+                // Cada item ocupa o ícone mais uma folga. Com a área de clique restrita ao
+                // ícone e ao nome, a folga pode ser pequena, como no Finder.
+                cellWidth: Math.floor(width / Math.max(1, Math.floor(width / (janela.tamanho + 34))))
+                cellHeight: janela.tamanho + 58
                 // Só a visão em uso recebe os itens: as duas ao mesmo tempo criariam dois
                 // campos de nome para o mesmo arquivo, um tirando o foco do outro.
                 model: janela.modo === "icones" ? janela.itens : []

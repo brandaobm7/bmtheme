@@ -50,6 +50,20 @@ echo "papel de parede: $(grep -m1 "^Image=" /usr/lib/plasmalogin/defaults.conf) 
 echo "erros na tela de login: $(cat /saida/login.log /saida/login-papel.log | grep -cE "TypeError|ReferenceError|is not a type|SyntaxError|failed to load|Error loading|not a valid package")"
 echo "== tela de boot"
 echo "tema de boot: $(plymouth-set-default-theme 2>/dev/null) | peças: $(ls /usr/share/plymouth/themes/bmos/*.png 2>/dev/null | wc -l) de 6"
+echo "== ajustes visuais"
+echo "tecla Windows: $(kreadconfig6 --file kwinrc --group ModifierOnlyShortcuts --key Meta | cut -c1-70)..."
+echo "sombra dos popups: $(grep -c 'id="shadow-' ~/.local/share/plasma/desktoptheme/bmos-claro/dialogs/background.svg) peças no claro, $(grep -c 'id="shadow-' ~/.local/share/plasma/desktoptheme/bmos-escuro/dialogs/background.svg) no escuro"
+for tema in /usr/share/themes/MacTahoe-Dark ~/.local/share/themes/MacTahoe-Dark; do
+  python3 - "$tema/gtk-3.0/gtk.css" <<'PY'
+import re, sys
+texto = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+cores = re.findall(r"#([0-9a-fA-F]{6})\b", texto)
+neutros = [c for c in cores if c[0:2] == c[2:4] == c[4:6] and c.lower() not in ("000000", "ffffff")]
+print(f"tema GTK {sys.argv[1]}: {len(cores)} cores, {len(neutros)} cinzas neutros")
+PY
+done
+echo "Chrome no tema do sistema: $(cat ~/.var/app/com.google.Chrome/config/google-chrome/Default/Preferences 2>/dev/null)"
+cp /usr/share/plymouth/themes/bmos/logo.png /saida/boot-logo.png 2>/dev/null
 echo "== grade de apps pelo ícone da dock"
 ~/.local/bin/bmos-apps; sleep 2; timeout 20 spectacle -b -n -f -o /saida/4b-grade.png >/dev/null 2>&1
 ~/.local/bin/bmos-apps; sleep 1

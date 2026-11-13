@@ -51,13 +51,15 @@ def mover(janela, x, y):
     QTest.mouseMove(janela, QPoint(x - 3, y - 2)); QTest.qWait(30); QTest.mouseMove(janela, QPoint(x, y)); QTest.qWait(30)
 QTest.qWait(1500)
 print("     janela:", raiz.width(), "x", raiz.height(), "| itens:", js("janela.itens.length"), "| modo:", js("janela.modo"))
-item = (353, 180); vazio = (850, 600); vazio2 = (700, 520)
+# As posições saem da própria janela, para o teste não depender das medidas da grade.
+largura, tamanho = int(js("grade.cellWidth")), int(js("janela.tamanho"))
+x0 = int(js("grade.itemAtIndex(0).mapToItem(null, 0, 0).x")); y0 = int(js("grade.itemAtIndex(0).mapToItem(null, 0, 0).y"))
+item = (x0 + largura // 2, y0 + 11 + tamanho // 2)       # o meio do ícone do primeiro item
+vazio = (850, 600); vazio2 = (700, 520)
 clique(raiz, esq, *item); ok("clicar num item marca o item", js("janela.selecao.length") == 1)
 clique(raiz, esq, *vazio); ok("clicar no vazio da grade limpa a seleção", js("janela.selecao.length") == 0)
 # O espaço entre dois itens vizinhos é vazio: só o ícone e o nome contam como o item.
-largura, tamanho = int(js("grade.cellWidth")), int(js("janela.tamanho"))
-x0 = int(js("grade.itemAtIndex(0).mapToItem(null, 0, 0).x")); y0 = int(js("grade.itemAtIndex(0).mapToItem(null, 0, 0).y"))
-icone = (x0 + largura // 2, y0 + 11 + tamanho // 2)      # o meio do ícone do primeiro item
+icone = item
 nome = (x0 + largura // 2, y0 + tamanho + 24 + 8)        # o meio da primeira linha do nome dele
 entre = (x0 + largura, icone[1])                          # a divisa com o vizinho, na altura do ícone
 clique(raiz, esq, *icone); clique(raiz, esq, *entre)
@@ -75,7 +77,7 @@ clique(raiz, esq, *vazio2); ok("clicar em outro lugar da pasta fecha o menu", js
 clique(raiz, dir_, *item); ok("botão direito num item abre o menu dele", js("menu.visible") is True and js("janela.selecao.length") == 1)
 clique(raiz, esq, *item); ok("clicar de novo no item fecha o menu e mantém o item marcado", js("menu.visible") is False and js("janela.selecao.length") == 1)
 clique(raiz, dir_, *vazio); QTest.keyClick(raiz, Qt.Key.Key_Escape); QTest.qWait(150); ok("Esc fecha o menu", js("menu.visible") is False)
-clique(raiz, esq, *item); clique(raiz, esq, 353 + 154, 180)
+clique(raiz, esq, *item); clique(raiz, esq, item[0] + largura, item[1])
 ok("clicar em outro item troca a seleção", js("janela.selecao.length") == 1)
 QTest.mouseClick(raiz, esq, Qt.KeyboardModifier.ControlModifier, QPoint(*item)); QTest.qWait(200)
 ok("Ctrl+clique soma à seleção", js("janela.selecao.length") == 2)

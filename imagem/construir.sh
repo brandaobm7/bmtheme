@@ -192,7 +192,7 @@ fi
 
 # ------------------------------------------------------------------ tela de boot
 passo "Tela de boot do bmos"
-# O fundo do bmos, o logo no centro e uma barra fina de progresso (imagem/boot).
+# O fundo do bmos, o logo do Bazzite no centro e uma barra fina de progresso (imagem/boot).
 # O Plymouth só lê PNG: as peças em SVG e o papel de parede são convertidos aqui.
 BOOT=/usr/share/plymouth/themes/bmos
 mkdir -p "$BOOT"
@@ -200,7 +200,10 @@ cp "$AQUI/boot/bmos.plymouth" "$AQUI/boot/bmos.script" "$BOOT/"
 for peca in barra-trilho barra-miolo barra-ponta-e barra-ponta-d; do
   magick -background none "$AQUI/boot/$peca.svg" "$BOOT/$peca.png"
 done
-magick -background none -density 384 "$TEMA/tema-global/comum/splash/images/logo.svg" -resize 128x128 "$BOOT/logo.png"
+# O logo é o do Bazzite, que já vem no sistema. Sem ele, entra o "b" do bmos.
+LOGO=/usr/share/icons/hicolor/scalable/places/bazzite-logo.svg
+[ -f "$LOGO" ] || LOGO="$TEMA/tema-global/comum/splash/images/logo.svg"
+magick -background none -density 384 "$LOGO" -resize 128x128 "$BOOT/logo.png"
 magick "$TEMA/papel-de-parede/bmos/contents/images/3840x2400.png" -resize 1920x1200 -strip "$BOOT/fundo.png"
 plymouth-set-default-theme bmos
 

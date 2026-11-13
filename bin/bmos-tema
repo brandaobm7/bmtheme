@@ -45,6 +45,12 @@ kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key library org.kde.k
 kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key theme "__aurorae__svg__MacTahoe-$variante"
 kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnLeft XIA
 kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnRight ""
+# A tecla Windows (Meta) sozinha abre a grade de todos os apps. O KWin chama o
+# Plasma, que entrega o pedido ao widget da barra pelo mesmo ajuste que o ícone
+# Apps da dock usa. O roteiro não pode ter vírgula: é ela que separa os campos
+# desta opção do KWin. Por isso os argumentos vão espalhados de uma lista.
+kwriteconfig6 --file kwinrc --group ModifierOnlyShortcuts --key Meta \
+  'org.kde.plasmashell,/PlasmaShell,org.kde.PlasmaShell,evaluateScript,var p=panels();for(var i=0;i<p.length;i++){var w=p[i].widgets();for(var j=0;j<w.length;j++){if(w[j].type=="org.bmos.apps"){w[j].currentConfigGroup=["General"];w[j].writeConfig(...["pedidoDaGrade"].concat(String(Date.now())))}}}'
 quieto qdbus org.kde.KWin /KWin org.kde.KWin.reconfigure
 
 # Apps GTK. Os GTK4 não seguem o tema do sistema: leem ~/.config/gtk-4.0.

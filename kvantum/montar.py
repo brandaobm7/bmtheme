@@ -59,11 +59,14 @@ MODOS = {
     },
 }
 
-# Azuis do MacTahoe -> azul-violeta do bmos.
+# Azuis do MacTahoe -> azul-violeta do bmos. Os da segunda linha em diante são
+# os do tema GTK, que usa esta mesma tabela (gtk/tingir.py).
 AZUIS = {
     "#0860f2": "#5463df", "#195edc": "#5463df", "#195dda": "#5463df",
     "#315bef": "#5f6ce5", "#3484e2": "#5f6ce5", "#3776e8": "#6b77ec",
     "#5294e2": "#7f8ff8",
+    "#0088ff": "#5f6ce5", "#2e7cf7": "#5f6ce5", "#1c71d8": "#5463df", "#006dcc": "#5463df",
+    "#4dacff": "#7f8ff8", "#66b8ff": "#7f8ff8",
 }
 
 # Medidas e comportamento, iguais nos dois modos. "seção": {chave: valor}.
@@ -100,18 +103,34 @@ def cinza_para_bmos(nivel, pontos):
     return None
 
 
+def cor_do_bmos(base, pontos):
+    """A cor do bmos para uma cor "#rrggbb" do tema de origem, ou None se ela fica como está."""
+    if base in AZUIS:
+        return AZUIS[base]
+    r, g, b = para_rgb(base)
+    if max(r, g, b) - min(r, g, b) <= 6 and base not in ("#000000", "#ffffff"):
+        return cinza_para_bmos(round((r + g + b) / 3), pontos)
+    return None
+
+
 def recolorir(texto, pontos):
-    """Troca os azuis pelos do bmos e dá aos cinzas o tom violeta da paleta."""
+    """Troca os azuis pelos do bmos e dá aos cinzas o tom violeta da paleta.
+
+    Vale para as cores escritas como "#rrggbb" (com ou sem transparência no fim)
+    e como "rgba(r, g, b, ...)", que é como o tema GTK escreve as translúcidas."""
     def trocar(achado):
         cor = achado.group(0).lower()
-        base, resto = cor[:7], cor[7:]          # o resto é a transparência, quando há
-        if base in AZUIS:
-            return AZUIS[base] + resto
-        r, g, b = para_rgb(base)
-        if max(r, g, b) - min(r, g, b) <= 6 and base not in ("#000000", "#ffffff"):
-            return (cinza_para_bmos(round((r + g + b) / 3), pontos) or base) + resto
-        return achado.group(0)
-    return re.sub(r"#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?\b", trocar, texto)
+        nova = cor_do_bmos(cor[:7], pontos)      # o que sobra é a transparência, quando há
+        return nova + cor[7:] if nova else achado.group(0)
+
+    def trocar_rgba(achado):
+        nova = cor_do_bmos("#%02x%02x%02x" % tuple(int(achado.group(i)) for i in (2, 3, 4)), pontos)
+        if not nova:
+            return achado.group(0)
+        return achado.group(1) + ", ".join(str(parte) for parte in para_rgb(nova))
+
+    texto = re.sub(r"#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?\b", trocar, texto)
+    return re.sub(r"(rgba?\()\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})", trocar_rgba, texto)
 
 
 def menu_opaco(svg, cartao):

@@ -223,19 +223,23 @@ if tem_kvantum && ! do_sistema Kvantum/bmos-claro && [ "$(versao_instalada kvant
 fi
 
 # ------------------------------------------------------------------ apps GTK
+# O tema MacTahoe é cinza neutro com realce azul. Depois de baixado, ele ganha a
+# tonalidade azul-violeta do bmos (gtk/tingir.py), para os apps em GTK ficarem
+# da mesma cor do resto do sistema.
+GTK_VERSAO="$MACTAHOE_GTK-$(cat "$AQUI/gtk/tingir.py" "$AQUI/kvantum/montar.py" | sha256sum | cut -c1-12)"
 if do_sistema themes/MacTahoe-Light; then
-  # Na imagem o tema GTK já está no sistema. Os apps em Flatpak só enxergam a
-  # pasta pessoal, então ele é copiado para lá, sem baixar nada.
-  if [ "$(versao_instalada gtk)" != "$MACTAHOE_GTK" ] || [ ! -d "$DADOS/themes/MacTahoe-Light" ]; then
+  # Na imagem o tema GTK já está no sistema, e já tingido. Os apps em Flatpak só
+  # enxergam a pasta pessoal, então ele é copiado para lá, sem baixar nada.
+  if [ "$(versao_instalada gtk)" != "$GTK_VERSAO" ] || [ ! -d "$DADOS/themes/MacTahoe-Light" ]; then
     passo "Tema dos apps GTK"
     mkdir -p "$DADOS/themes"
     for variante in Light Dark; do
       rm -rf "$DADOS/themes/MacTahoe-$variante"
       cp -r "$SISTEMA/themes/MacTahoe-$variante" "$DADOS/themes/"
     done
-    marcar_versao gtk "$MACTAHOE_GTK"
+    marcar_versao gtk "$GTK_VERSAO"
   fi
-elif [ "$(versao_instalada gtk)" != "$MACTAHOE_GTK" ]; then
+elif [ "$(versao_instalada gtk)" != "$GTK_VERSAO" ]; then
   passo "Tema dos apps GTK"
   mkdir -p "$DADOS/themes"
   for variante in Light Dark; do
@@ -246,13 +250,35 @@ elif [ "$(versao_instalada gtk)" != "$MACTAHOE_GTK" ]; then
     rm -rf "$DADOS/themes/MacTahoe-$variante"
     tar -xJf "$TEMP/gtk-$variante.tar.xz" -C "$DADOS/themes"
   done
-  marcar_versao gtk "$MACTAHOE_GTK"
+  python3 "$AQUI/gtk/tingir.py" "$DADOS/themes"
+  marcar_versao gtk "$GTK_VERSAO"
 fi
 
 # Os apps em Flatpak só enxergam o tema se tiverem acesso às pastas dele.
 if [ -z "$SO_COMPONENTES" ] && command -v flatpak >/dev/null; then
   flatpak override --user --filesystem=xdg-data/themes:ro --filesystem=xdg-data/icons:ro \
     --filesystem=xdg-config/gtk-3.0:ro --filesystem=xdg-config/gtk-4.0:ro >/dev/null 2>&1 || true
+fi
+
+# O Chrome desenha os próprios botões de janela, cinzas e quadrados, a não ser que
+# use o tema GTK (Configurações > Aparência > Tema > Usar GTK). Com o tema GTK vêm
+# os três botões redondos e a cor do bmos. O Chrome não tem opção de linha de
+# comando para isso, então a escolha é gravada antes do primeiro uso dele. Um
+# perfil que já existe não é tocado: nele a troca é feita nas configurações.
+if [ -z "$SO_COMPONENTES" ]; then
+  for perfil in "$HOME/.var/app/com.google.Chrome/config/google-chrome" "$CONFIG/google-chrome"; do
+    case "$perfil" in
+      "$HOME/.var/app/"*)
+        # Na imagem o Chrome chega sozinho depois do primeiro boot.
+        [ -d "$SISTEMA/bmtheme" ] || flatpak info com.google.Chrome >/dev/null 2>&1 || continue ;;
+      *)
+        command -v google-chrome-stable >/dev/null 2>&1 || continue ;;
+    esac
+    if [ ! -e "$perfil/Local State" ] && [ ! -e "$perfil/Default/Preferences" ]; then
+      mkdir -p "$perfil/Default"
+      printf '{"extensions":{"theme":{"system_theme":1}}}\n' >"$perfil/Default/Preferences"
+    fi
+  done
 fi
 
 # ------------------------------------------------------------------ Arquivos e Ajustes

@@ -51,6 +51,7 @@ RECUO_ICONE = {"top": 5, "bottom": 5, "left": 1, "right": 1}
 LARGURA_CELULA = ALTURA_DOCK + (RECUO_ICONE["left"] + RECUO_ICONE["right"]) * ESPACAMENTO_DOCK
 RAIO_POPUP = 24  # canto dos popups
 RECUO_POPUP = 14 # distância entre a borda do popup e o conteúdo
+SOMBRA_POPUP = 30 # até onde a sombra dos popups vai, por fora da borda
 
 VARIANTES = {
     "bmos-claro": {
@@ -58,12 +59,15 @@ VARIANTES = {
         "vidro": ("#ffffff", 0.49), "borda": ("#ffffff", 0.82),
         "popup": ("#f4f2fb", 0.62), "popup_sem_desfoque": ("#f4f2fb", 0.95), "borda_popup": ("#ffffff", 0.95),
         "ponto": ("#464064", 0.75), "realce": ("#ffffff", 0.40),
+        # Sombra dos popups (Central, busca): leve, no tom violeta da sombra do Arquivos.
+        "sombra": ("#292159", 0.30),
     },
     "bmos-escuro": {
         "nome": "bmos Escuro",
         "vidro": ("#1e1c36", 0.50), "borda": ("#ffffff", 0.16),
         "popup": ("#1e1c36", 0.66), "popup_sem_desfoque": ("#1e1c36", 0.96), "borda_popup": ("#ffffff", 0.16),
         "ponto": ("#ffffff", 0.80), "realce": ("#ffffff", 0.12),
+        "sombra": ("#05041a", 0.62),
     },
 }
 
@@ -144,14 +148,64 @@ def painel(v):
     return svg(200, 80, pecas + margens())
 
 
+def sombra(v, x0, y0):
+    """Oito peças da sombra dos popups, que o Plasma desenha por fora da janela.
+
+    O Qt não aplica desfoque em SVG, então a sombra é feita de degradês: forte
+    junto da borda e sumindo até SOMBRA_POPUP de distância. Cada canto cobre
+    também o quadrado do canto redondo da janela, e ali a sombra acompanha a curva."""
+    s, r = SOMBRA_POPUP, RAIO_POPUP
+    c = s + r                       # lado da peça do canto
+    tom, forca = v["sombra"]
+    # A sombra cai depressa: a maior parte fica nos primeiros pixels.
+    queda = ((0, 1.0), (0.3, 0.58), (0.65, 0.2), (1, 0.0))
+
+    def paradas(inicio=0.0):
+        linhas = []
+        if inicio > 0:
+            # Debaixo da janela não há sombra: ela começa na borda.
+            linhas.append(f'<stop offset="0" stop-color="{tom}" stop-opacity="0"/>')
+            linhas.append(f'<stop offset="{inicio:.4f}" stop-color="{tom}" stop-opacity="0"/>')
+        for onde, quanto in queda:
+            linhas.append(f'<stop offset="{inicio + onde * (1 - inicio):.4f}" stop-color="{tom}" '
+                          f'stop-opacity="{forca * quanto:.4f}"/>')
+        return "".join(linhas)
+
+    pecas = ["<defs>"]
+    # Um degradê reto para cada lado, indo da borda da janela para fora.
+    for nome, (x1, y1, x2, y2) in {"top": (0, 1, 0, 0), "bottom": (0, 0, 0, 1),
+                                   "left": (1, 0, 0, 0), "right": (0, 0, 1, 0)}.items():
+        pecas.append(f'<linearGradient id="sombra-{nome}-cor" x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}">{paradas()}</linearGradient>')
+    # Um degradê redondo para cada canto, com o centro no centro da curva da janela.
+    xe, xm, xd = x0, x0 + c + 10, x0 + c + 10 + 24 + 10
+    yt, ym, yb = y0, y0 + c + 10, y0 + c + 10 + 24 + 10
+    cantos = {"topleft": (xe, yt, xe + c, yt + c), "topright": (xd, yt, xd, yt + c),
+              "bottomleft": (xe, yb, xe + c, yb), "bottomright": (xd, yb, xd, yb)}
+    for nome, (x, y, cx, cy) in cantos.items():
+        pecas.append(f'<radialGradient id="sombra-{nome}-cor" gradientUnits="userSpaceOnUse" cx="{cx}" cy="{cy}" '
+                     f'r="{c}">{paradas(r / c)}</radialGradient>')
+    pecas.append("</defs>")
+    for nome, (x, y, cx, cy) in cantos.items():
+        pecas.append(f'<rect id="shadow-{nome}" x="{x}" y="{y}" width="{c}" height="{c}" fill="url(#sombra-{nome}-cor)"/>')
+    pecas.append(f'<rect id="shadow-top" x="{xm}" y="{yt}" width="24" height="{s}" fill="url(#sombra-top-cor)"/>')
+    pecas.append(f'<rect id="shadow-bottom" x="{xm}" y="{yb + r}" width="24" height="{s}" fill="url(#sombra-bottom-cor)"/>')
+    pecas.append(f'<rect id="shadow-left" x="{xe}" y="{ym}" width="{s}" height="24" fill="url(#sombra-left-cor)"/>')
+    pecas.append(f'<rect id="shadow-right" x="{xd + r}" y="{ym}" width="{s}" height="24" fill="url(#sombra-right-cor)"/>')
+    # Até onde a sombra vai, por fora de cada lado da janela.
+    for i, borda in enumerate(("top", "bottom", "left", "right")):
+        pecas.append(vazio(f"shadow-hint-{borda}-margin", x0 + i * (s + 6), yb + c + 10, s, s))
+    return pecas
+
+
 def popup(v, fundo):
-    """Fundo dos popups do Plasma: vidro com cantos redondos."""
+    """Fundo dos popups do Plasma: vidro com cantos redondos e uma sombra leve em volta."""
     pecas = vidro("", 0, 0, RAIO_POPUP, 24, fundo, v["borda_popup"])
+    pecas += sombra(v, 0, 100)
     # O conteúdo fica a RECUO_POPUP da borda, e não à distância do canto redondo.
     for i, borda in enumerate(("top", "bottom", "left", "right")):
         pecas.append(vazio(f"hint-{borda}-margin", 100 + i * 20, 0, RECUO_POPUP, RECUO_POPUP))
     pecas.append(vazio("hint-stretch-borders", 100, 30, 4, 4))
-    return svg(200, 80, pecas)
+    return svg(240, 320, pecas)
 
 
 def tarefas(v):
