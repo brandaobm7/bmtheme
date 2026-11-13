@@ -6,3 +6,7 @@ com.github.tchx84.Flatseal
 io.github.flattool.Warehouse
 # O Bazzite 45 passou o teclado de outros idiomas (fcitx5) para Flatpak.
 org.fcitx.Fcitx5
+# O instalador novo do Bazzite põe estes dois: contêineres de outras distribuições
+# (no lugar do DistroShelf) e atualização de firmware. Uso técnico.
+io.github.DenysMb.Kontainer
+org.gnome.Firmware

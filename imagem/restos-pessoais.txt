@@ -69,3 +69,5 @@ flatpak:com.ranfdev.DistroShelf
 flatpak:com.github.tchx84.Flatseal
 flatpak:io.github.flattool.Warehouse
 flatpak:org.fcitx.Fcitx5
+flatpak:io.github.DenysMb.Kontainer
+flatpak:org.gnome.Firmware
