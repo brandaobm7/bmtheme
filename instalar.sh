@@ -177,7 +177,6 @@ if ! do_sistema fonts/bmos/Inter-Regular.ttf \
   # "Inter Variable", e os apps que pedem "Inter" não a encontrariam.
   rm -rf "$DADOS/fonts/bmos"
   mkdir -p "$DADOS/fonts/bmos"
-  # A Light é a do relógio da tela de bloqueio na imagem bmos.
   for peso in Light Regular Italic Medium MediumItalic SemiBold SemiBoldItalic Bold BoldItalic; do
     unzip -q -o -j "$TEMP/inter.zip" "extras/ttf/Inter-$peso.ttf" -d "$DADOS/fonts/bmos"
   done

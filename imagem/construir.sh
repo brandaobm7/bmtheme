@@ -150,11 +150,13 @@ echo "Assinatura do tema: $(cat "$TEMA/assinatura")"
 install -m 755 "$AQUI/limpar-restos" /usr/bin/bmos-limpar-restos
 
 # ------------------------------------------------------------------ tela de bloqueio
-passo "Tela de bloqueio com o desenho do bmos"
-# Relógio no meio enquanto descansa; ao mexer, ele vai para a esquerda e aparecem o
-# nome e o campo de senha. Se o Plasma mudar e as trocas não encaixarem, nada é
-# alterado e a tela fica como a do Plasma.
-python3 "$AQUI/tela-de-bloqueio.py"
+passo "Tela de bloqueio: correção para conta sem senha"
+# A tela de bloqueio fica com o desenho do Plasma, o mesmo da tela de login: as
+# duas têm de ser iguais, e a de login não aceita outro desenho. O tema só troca
+# o papel de parede dela (bin/bmos-tema).
+# A única troca nos arquivos dela corrige um defeito do Plasma: numa conta sem
+# senha, depois de voltar da suspensão, a tela não destravava mais.
+python3 "$AQUI/bloqueio-sem-senha.py"
 
 # ------------------------------------------------------------------ tela de login
 passo "Tela de login com o papel de parede, as cores e a fonte do bmos"
@@ -162,10 +164,12 @@ passo "Tela de login com o papel de parede, as cores e a fonte do bmos"
 # programa: não dá para mudar a disposição das peças. Dá para trocar o papel de
 # parede, as cores e a fonte, e é isso que se faz aqui.
 if [ -f /usr/lib/plasmalogin/defaults.conf ]; then
-  # Papel de parede: o do bmos. O pacote tem as duas versões, e a escura é usada com cores escuras.
-  sed -i -e 's#^Image=.*#Image=file:///usr/share/bmtheme/papel-de-parede/bmos#' \
-         -e 's#^PreviewImage=.*#PreviewImage=file:///usr/share/bmtheme/papel-de-parede/bmos#' /usr/lib/plasmalogin/defaults.conf
-  grep -q '^Image=file:///usr/share/bmtheme/papel-de-parede/bmos$' /usr/lib/plasmalogin/defaults.conf \
+  # Papel de parede: o mesmo da tela de bloqueio (bin/bmos-tema), o escuro do bmos
+  # um pouco mais fechado, para o relógio branco ficar legível.
+  FUNDO=/usr/share/bmtheme/papel-de-parede/bmos-bloqueio/contents/images_dark/3840x2400.png
+  [ -f "$FUNDO" ] || { echo "Erro: falta o papel de parede da tela de login." >&2; exit 1; }
+  sed -i -e "s#^Image=.*#Image=file://$FUNDO#" -e "s#^PreviewImage=.*#PreviewImage=file://$FUNDO#" /usr/lib/plasmalogin/defaults.conf
+  grep -q "^Image=file://$FUNDO\$" /usr/lib/plasmalogin/defaults.conf \
     || echo "Aviso: não consegui trocar o papel de parede da tela de login." >&2
   # Cores e fonte: um arquivo de ajustes do sistema, lido só pelos dois programas da
   # tela de login. Se a pessoa copiar os ajustes dela para a tela de login pelas

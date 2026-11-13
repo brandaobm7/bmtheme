@@ -30,7 +30,7 @@ sleep 6; timeout 20 spectacle -b -n -f -o /saida/4c-editor.png >/dev/null 2>&1; 
 setsid systemsettings kcm_kscreen >/dev/null 2>&1 &
 sleep 9; timeout 20 spectacle -b -n -f -o /saida/4d-configuracoes.png >/dev/null 2>&1; pkill -x systemsettings
 echo "== tela de bloqueio (modo de teste, numa janela, sem travar nada)"
-echo "desenho do bmos nos arquivos do sistema: $(grep -l "imagem/tela-de-bloqueio.py" /usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen/*.qml 2>/dev/null | wc -l) de 2"
+echo "tela de bloqueio: arquivos com conteúdo diferente do pacote do Plasma: $(rpm -V plasma-desktop 2>/dev/null | grep lockscreen | grep "^..5" | sed "s#.*/lockscreen/##" | tr "\n" " ")(deve ser só LockScreenUi.qml) | correção para conta sem senha: $(grep -c "imagem/bloqueio-sem-senha.py" /usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen/LockScreenUi.qml) de 1 | papel de parede: $(kreadconfig6 --file kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.image --group General --key Image | sed "s#.*/wallpapers/##")"
 setsid /usr/libexec/kscreenlocker_greet --testing >/saida/bloqueio.log 2>&1 &
 sleep 7; timeout 20 spectacle -b -n -f -o /saida/4e-bloqueio.png >/dev/null 2>&1; pkill -f kscreenlocker_greet; sleep 1
 echo "erros de QML na tela de bloqueio: $(grep -cE "TypeError|ReferenceError|is not a type|Cannot assign|Unable to assign|is not defined|SyntaxError|failed to load|Error loading" /saida/bloqueio.log)"

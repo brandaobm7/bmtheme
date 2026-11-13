@@ -30,15 +30,16 @@ quieto /usr/libexec/plasma-changeicons "$icones"
 quieto plasma-apply-wallpaperimage "$DADOS/wallpapers/bmos"
 
 # Tela de abertura (entre o login e a área de trabalho) e tela de bloqueio.
-# A tela de bloqueio é a do Plasma, com o papel de parede do bmos escurecido,
-# para o relógio branco ficar legível.
+# A tela de bloqueio é a do Plasma, com o papel de parede escuro do bmos um
+# pouco mais fechado, para o relógio branco ficar legível. É sempre a versão
+# escura, nos dois modos: a mesma imagem que a tela de login da imagem bmos usa.
 kwriteconfig6 --file ksplashrc --group KSplash --key Engine KSplashQML
 kwriteconfig6 --file ksplashrc --group KSplash --key Theme "$pacote"
 kwriteconfig6 --file kscreenlockerrc --group Greeter --key WallpaperPlugin org.kde.image
 kwriteconfig6 --file kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.image --group General \
-  --key Image "file://$DADOS/wallpapers/bmos-bloqueio"
+  --key Image "file://$DADOS/wallpapers/bmos-bloqueio/contents/images_dark/3840x2400.png"
 kwriteconfig6 --file kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.image --group General \
-  --key PreviewImage "file://$DADOS/wallpapers/bmos-bloqueio"
+  --key PreviewImage "file://$DADOS/wallpapers/bmos-bloqueio/contents/images_dark/3840x2400.png"
 
 # Decoração das janelas, com os botões coloridos à esquerda.
 kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key library org.kde.kwin.aurorae
